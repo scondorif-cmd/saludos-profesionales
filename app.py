@@ -4,7 +4,6 @@ import requests
 from datetime import datetime
 import urllib.parse
 import io
-from PIL import Image, ImageDraw, ImageFont
 
 # Configuración de la plataforma
 st.set_page_config(page_title="Control de Cumpleaños UNAMAD", page_icon="🎓", layout="centered")
@@ -26,80 +25,6 @@ def descargar_datos():
         url_descarga = url_google_sheets
     resp = requests.get(url_descarga)
     return pd.read_excel(io.BytesIO(resp.content), header=None, skiprows=1)
-
-def obtener_fuente_segura(url, tamano):
-    """Descarga una fuente TTF directamente de internet para evitar distorsiones en el servidor"""
-    try:
-        respuesta = requests.get(url)
-        return ImageFont.truetype(io.BytesIO(respuesta.content), tamano)
-    except:
-        return ImageFont.load_default()
-
-def crear_tarjeta_imagen(nombre, carrera):
-    # Dimensiones óptimas para tarjetas de felicitación
-    ancho, alto = 750, 850
-    imagen = Image.new("RGB", (ancho, alto), "#FFFFFF")
-    draw = ImageDraw.Draw(imagen)
-    
-    # Enlaces de fuentes seguras (Arial / Roboto equivalentes desde GitHub público)
-    url_fuente_bold = "https://github.com/google/fonts/raw/main/apache/roboto/static/Roboto-Bold.ttf"
-    url_fuente_regular = "https://github.com/google/fonts/raw/main/apache/roboto/static/Roboto-Regular.ttf"
-    
-    f_titulo = obtener_fuente_segura(url_fuente_bold, 28)
-    f_subtitulo = obtener_fuente_segura(url_fuente_regular, 15)
-    f_cuerpo_bold = obtener_fuente_segura(url_fuente_bold, 18)
-    f_cuerpo = obtener_fuente_segura(url_fuente_regular, 17)
-    f_eslogan = obtener_fuente_segura(url_fuente_bold, 20)
-    f_pie_tit = obtener_fuente_segura(url_fuente_bold, 13)
-    f_pie_sub = obtener_fuente_segura(url_fuente_bold, 15)
-    f_pie_univ = obtener_fuente_segura(url_fuente_regular, 13)
-
-    # 1. Encabezado Azul Institucional (#1B365D)
-    draw.rectangle([0, 0, ancho, 140], fill="#1B365D")
-    draw.text((ancho // 2, 45), f"¡Feliz Cumpleaños, {nombre.upper()}! 🎂🎉", fill="#FFFFFF", font=f_titulo, anchor="mm")
-    draw.text((ancho // 2, 95), f"Egresado(a) de la Carrera Profesional de {carrera.upper()}", fill="#E2E8F0", font=f_subtitulo, anchor="mm")
-    
-    # 2. Contenido del Cuerpo (Texto alineado a la izquierda en color oscuro)
-    draw.text((50, 190), "Estimado(a) egresado(a),", fill="#1E293B", font=f_cuerpo_bold)
-    
-    lineas = [
-        "Hoy es un día muy especial, y desde la Unidad de Seguimiento al",
-        "Egresado y Bolsa de Trabajo queremos hacerte llegar nuestras más",
-        "sinceras felicitaciones por tu cumpleaños.",
-        "",
-        "Nos sentimos muy orgullosos de tus pasos y de tenerte como miembro activo",
-        "de nuestra comunidad de graduados. Deseamos que pases un día",
-        "extraordinario junto a tus seres queridos y que este nuevo año esté lleno",
-        "de salud, felicidad y grandes éxitos profesionales."
-    ]
-    
-    y_linea = 240
-    for linea in lineas:
-        draw.text((50, y_linea), linea, fill="#334155", font=f_cuerpo)
-        y_linea += 32
-        
-    # Mensaje de cierre destacado
-    draw.text((ancho // 2, 570), "¡Que disfrutes mucho de tu día!", fill="#1B365D", font=f_eslogan, anchor="mm")
-    
-    # 3. Pie de Página Azul Oscuro (#0B1D33)
-    draw.rectangle([0, alto - 150, ancho, alto], fill="#0B1D33")
-    draw.text((ancho // 2, alto - 110), "ATENTAMENTE,", fill="#38BDF8", font=f_pie_tit, anchor="mm")
-    draw.text((ancho // 2, alto - 80), "Unidad de Seguimiento al Egresado y Bolsa de Trabajo - DAA", fill="#FFFFFF", font=f_pie_sub, anchor="mm")
-    draw.text((ancho // 2, alto - 50), "Universidad Nacional Amazónica de Madre de Dios", fill="#CBD5E1", font=f_pie_univ, anchor="mm")
-    
-    # 4. Superponer la Mascota Institucional de forma correcta
-    try:
-        url_mascota = "https://raw.githubusercontent.com/scondorif-cmd/saludos-profesionales/principal/mascota.png"
-        res_img = requests.get(url_mascota)
-        img_mascota = Image.open(io.BytesIO(res_img.content)).convert("RGBA")
-        # Ajustar tamaño proporcional
-        img_mascota = img_mascota.resize((150, 175))
-        # Colocar en la esquina derecha del cuerpo de texto
-        imagen.paste(img_mascota, (540, 180), img_mascota)
-    except:
-        pass
-        
-    return imagen
 
 try:
     df = descargar_datos()
@@ -142,27 +67,50 @@ try:
                 
             link_wa = f"https://api.whatsapp.com/send?phone={num_limpio}&text={texto_codificado}"
             
-            # Generar la imagen sólida con Pillow
-            imagen_tarjeta = crear_tarjeta_imagen(nombre_egresado, carrera_profesional)
+            # --- DISEÑO DIGITAL EXACTO EN HTML (Impedirá distorsiones de fuentes) ---
+            html_tarjeta = f"""
+            <div style="background-color: #FFFFFF; border-radius: 0px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 550px; font-family: 'Arial', sans-serif; overflow: hidden; margin: 10px auto; border: 1px solid #E2E8F0;">
+                
+                <div style="background-color: #1B365D; padding: 30px 15px; text-align: center;">
+                    <h2 style="color: #FFFFFF; margin: 0; font-size: 24px; font-weight: bold; line-height: 1.3;">¡Feliz Cumpleaños, {nombre_egresado}! 🎂🎉</h2>
+                    <p style="color: #E2E8F0; margin: 8px 0 0 0; font-size: 13px; font-weight: normal;">Egresado(a) de la Carrera Profesional de {carrera_profesional.upper()}</p>
+                </div>
+                
+                <div style="padding: 30px 25px; background-color: #FFFFFF; position: relative;">
+                    
+                    <div style="float: right; margin-left: 15px; margin-bottom: 10px; width: 130px;">
+                        <img src="https://raw.githubusercontent.com/scondorif-cmd/saludos-profesionales/principal/mascota.png" style="width: 100%; height: auto; display: block;" alt="Mascota">
+                    </div>
+                    
+                    <p style="color: #1E293B; font-weight: bold; font-size: 16px; margin: 0 0 15px 0;">Estimado(a) egresado(a),</p>
+                    
+                    <p style="color: #334155; font-size: 14.5px; line-height: 1.6; margin: 0 0 15px 0; text-align: justify;">
+                        Hoy es un día muy especial, y desde la <strong style="color: #1E293B;">Unidad de Seguimiento al Egresado y Bolsa de Trabajo</strong> queremos hacerte llegar nuestras más sinceras felicitaciones por tu cumpleaños.
+                    </p>
+                    
+                    <p style="color: #334155; font-size: 14.5px; line-height: 1.6; margin: 0 0 20px 0; text-align: justify;">
+                        Nos sentimos muy orgullosos de tus pasos y de tenerte como miembro activo de nuestra comunidad de graduados. Deseamos que pases un día extraordinario junto a tus seres queridos y que este nuevo año esté lleno de salud, felicidad y grandes éxitos profesionales.
+                    </p>
+                    
+                    <div style="clear: both;"></div>
+                    
+                    <h4 style="color: #1B365D; text-align: center; font-size: 18px; font-weight: bold; margin: 20px 0 5px 0;">¡Que disfrutes mucho de tu día!</h4>
+                </div>
+                
+                <div style="background-color: #0B1D33; padding: 20px 15px; text-align: center; color: #FFFFFF; font-size: 12px; line-height: 1.5;">
+                    <span style="color: #38BDF8; font-weight: bold; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">ATENTAMENTE,</span>
+                    <strong style="display: block; font-size: 13px; color: #FFFFFF;">Unidad de Seguimiento al Egresado y Bolsa de Trabajo - DAA</strong>
+                    <span style="color: #94A3B8; display: block; margin-top: 2px;">Universidad Nacional Amazónica de Madre de Dios</span>
+                </div>
+            </div>
+            """
             
-            # Preparar descarga de la imagen en memoria
-            buf = io.BytesIO()
-            imagen_tarjeta.save(buf, format="PNG")
-            byte_im = buf.getvalue()
-            
-            # Interfaz de visualización limpia en 2 columnas fijas
+            # Interfaz de visualización limpia en 2 columnas fijas en Streamlit
             col1, col2 = st.columns([1.2, 1.0])
             with col1:
-                st.image(imagen_tarjeta, use_container_width=True, caption=f"Tarjeta Oficial - {nombre_egresado}")
-                
-                # Botón oficial para guardar el archivo .png real
-                st.download_button(
-                    label=f"💾 Guardar / Descargar Tarjeta (.png)",
-                    data=byte_im,
-                    file_name=f"Tarjeta_{nombre_egresado.replace(' ', '_')}.png",
-                    mime="image/png",
-                    key=f"btn_dl_{index}"
-                )
+                # Renderiza la tarjeta perfecta en HTML nativo
+                st.components.v1.html(html_tarjeta, height=550, scrolling=False)
+                st.caption("📸 *Toma una captura de pantalla a la tarjeta para enviarla nítida y perfecta.*")
                 
             with col2:
                 st.markdown(f"### 🥳 {nombre_egresado}")
