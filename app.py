@@ -4,18 +4,18 @@ import requests
 from datetime import datetime
 import urllib.parse
 import io
+from PIL import Image, ImageDraw, ImageFont
 
 # Configuración de la plataforma
 st.set_page_config(page_title="Control de Cumpleaños UNAMAD", page_icon="🎓", layout="centered")
 
 st.title("🎓 Sistema de Cumpleaños UNAMAD")
-st.write("Control y envío de saludos para egresados desde la nube (PC o Celular).")
+st.write("Generación automatizada de tarjetas institucionales con descarga en alta calidad.")
 
 # Selector de fecha interactivo
 fecha_seleccionada = st.date_input("Selecciona la fecha a procesar:", datetime.now())
 dia_buscado = fecha_seleccionada.strftime("%d/%m")
 
-# Enlace de tu base de datos en Google Sheets
 url_google_sheets = "https://docs.google.com/spreadsheets/d/1ScZqatCGsyBUAOQBTdwkTxfOoZNlRfuTD5bhy_iRCao/edit?usp=sharing"
 
 def descargar_datos():
@@ -25,6 +25,71 @@ def descargar_datos():
         url_descarga = url_google_sheets
     resp = requests.get(url_descarga)
     return pd.read_excel(io.BytesIO(resp.content), header=None, skiprows=1)
+
+def crear_tarjeta_imagen(nombre, carrera):
+    # Dimensiones de lienzo idénticas a la tarjeta original
+    ancho, alto = 750, 850
+    imagen = Image.new("RGB", (ancho, alto), "#FFFFFF")
+    draw = ImageDraw.Draw(imagen)
+    
+    # 1. Encabezado Institucional Azul
+    draw.rectangle([0, 0, ancho, 150], fill="#1B365D")
+    
+    # Fuentes por defecto del sistema seguras para evitar errores de archivo roto ("broken file")
+    try:
+        # Intentamos cargar una fuente estándar del servidor si estuviera disponible
+        f_tit = ImageFont.truetype("LiberationSans-Bold.ttf", 26)
+        f_sub = ImageFont.truetype("LiberationSans-Regular.ttf", 14)
+        f_txt = ImageFont.truetype("LiberationSans-Regular.ttf", 16)
+    except:
+        # Respaldo absoluto para que jamás vuelva a salir "broken file"
+        f_tit = ImageFont.load_default()
+        f_sub = ImageFont.load_default()
+        f_txt = ImageFont.load_default()
+
+    # Escribir textos en el encabezado
+    draw.text((ancho // 2, 45), f"¡Feliz Cumpleaños, {nombre.upper()}! 🎂🎉", fill="#FFFFFF", font=f_tit, anchor="mm")
+    draw.text((ancho // 2, 95), f"Egresado(a) de la Carrera Profesional de {carrera.upper()}", fill="#E2E8F0", font=f_sub, anchor="mm")
+    
+    # 2. Textos del Cuerpo (Alineados a la izquierda sobre fondo blanco limpio)
+    draw.text((45, 190), "Estimado(a) egresado(a),", fill="#1E293B", font=f_tit)
+    
+    lineas_mensaje = [
+        "Hoy es un día muy especial, y desde la Unidad de Seguimiento al",
+        "Egresado y Bolsa de Trabajo queremos hacerte llevar nuestras más",
+        "sinceras felicitaciones por tu cumpleaños.",
+        "",
+        "Nos sentimos muy orgullosos de tus pasos y de tenerte como miembro activo",
+        "de nuestra comunidad de graduados. Deseamos que pases un día",
+        "extraordinario junto a tus seres queridos y que este nuevo año esté lleno",
+        "de salud, felicidad y grandes éxitos profesionales."
+    ]
+    
+    y_lineas = 235
+    for linea in lineas_mensaje:
+        draw.text((45, y_lineas), linea, fill="#334155", font=f_txt)
+        y_lineas += 32
+        
+    draw.text((ancho // 2, 580), "¡Que disfrutes mucho de tu día!", fill="#1B365D", font=f_tit, anchor="mm")
+    
+    # 3. Franja Azul Inferior (Pie de página)
+    draw.rectangle([0, alto - 140, ancho, alto], fill="#0B1D33")
+    draw.text((ancho // 2, alto - 105), "ATENTAMENTE,", fill="#38BDF8", font=f_sub, anchor="mm")
+    draw.text((ancho // 2, alto - 75), "Unidad de Seguimiento al Egresado y Bolsa de Trabajo - DAA", fill="#FFFFFF", font=f_sub, anchor="mm")
+    draw.text((ancho // 2, alto - 45), "Universidad Nacional Amazónica de Madre de Dios", fill="#94A3B8", font=f_sub, anchor="mm")
+    
+    # 4. Inyección de la Mascota sin usar el enlace problemático de Google Drive
+    try:
+        url_mascota = "https://raw.githubusercontent.com/scondorif-cmd/saludos-profesionales/principal/mascota.png"
+        res_img = requests.get(url_mascota, timeout=5)
+        img_mascota = Image.open(io.BytesIO(res_img.content)).convert("RGBA")
+        img_mascota = img_mascota.resize((150, 175))
+        # Pegar mascota de forma exacta en el espacio blanco superior derecho
+        imagen.paste(img_mascota, (540, 180), img_mascota)
+    except:
+        pass # Evita que se caiga el sistema si el servidor de imágenes falla momentáneamente
+        
+    return imagen
 
 try:
     df = descargar_datos()
@@ -57,7 +122,7 @@ try:
             contador += 1
             nombre_egresado = nombre_completo.split(",")[1].strip() if "," in nombre_completo else nombre_completo
             
-            # Formatear el texto de envío para WhatsApp
+            # Texto para WhatsApp
             texto_whatsapp = f"¡HOY CELEBRAMOS SU CUMPLEAÑOS! 🎂🎉\n\nEnviamos un afectuoso saludo a nuestro(a) profesional que festeja su onomástico hoy:\n\n*{nombre_egresado}*\n🎓 {carrera_profesional}\n\n¡Muchas felicidades y que tenga un excelente día! ✨🎈"
             texto_codificado = urllib.parse.quote(texto_whatsapp)
             
@@ -67,72 +132,36 @@ try:
                 
             link_wa = f"https://api.whatsapp.com/send?phone={num_limpio}&text={texto_codificado}"
             
-            # Conversión de tu enlace de Google Drive a descarga directa e idónea para HTML
-            id_drive = "10fW68y7oiTcr-VcPoEW1V-OQ4O3psxup"
-            url_mascota_directa = f"https://lh3.googleusercontent.com/d/{id_drive}"
+            # Generar la imagen real de la tarjeta
+            imagen_tarjeta = crear_tarjeta_imagen(nombre_egresado, carrera_profesional)
             
-            # --- ESTRUCTURA DE TABLA FIJA (Mantiene las proporciones exactas de Tarjeta_SHANIRA.png) ---
-            html_tarjeta = f"""
-            <div style="display: flex; justify-content: center; background-color: #F8FAFC; padding: 10px;">
-                <table width="550" cellspacing="0" cellpadding="0" style="background-color: #FFFFFF; font-family: 'Arial', sans-serif; border: 1px solid #CBD5E1; border-collapse: collapse; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-                    
-                    <tr>
-                        <td bgcolor="#1B365D" align="center" style="padding: 25px 20px; border-bottom: 3px solid #1E3A8A;">
-                            <h2 style="color: #FFFFFF; margin: 0; font-size: 24px; font-weight: bold; line-height: 1.3; font-family: 'Arial', sans-serif;">¡Feliz Cumpleaños, {nombre_egresado}! 🎂🎉</h2>
-                            <p style="color: #E2E8F0; margin: 6px 0 0 0; font-size: 13px; font-weight: normal; font-family: 'Arial', sans-serif;">Egresado(a) de la Carrera Profesional de {carrera_profesional.upper()}</p>
-                        </td>
-                    </tr>
-                    
-                    <tr>
-                        <td style="padding: 25px 25px 15px 25px; bgcolor: #FFFFFF;">
-                            <table width="100%" cellspacing="0" cellpadding="0">
-                                <tr>
-                                    <td valign="top" style="color: #334155; font-size: 14px; line-height: 1.6; text-align: justify; font-family: 'Arial', sans-serif;">
-                                        <p style="color: #1E293B; font-weight: bold; font-size: 16px; margin: 0 0 12px 0;">Estimado(a) egresado(a),</p>
-                                        <p style="margin: 0 0 12px 0;">Hoy es un día muy especial, y desde la <strong>Unidad de Seguimiento al Egresado y Bolsa de Trabajo</strong> queremos hacerte llegar nuestras más sinceras felicitaciones por tu cumpleaños.</p>
-                                        <p style="margin: 0 0 15px 0;">Nos sentimos muy orgullosos de tus pasos y de tenerte como miembro activo de nuestra comunidad de graduados. Deseamos que pases un día extraordinario junto a tus seres queridos y que este nuevo año esté lleno de salud, felicidad y grandes éxitos profesionales.</p>
-                                    </td>
-                                    
-                                    <td width="140" valign="top" align="right" style="padding-left: 15px;">
-                                        <img src="{url_mascota_directa}" width="130" style="display: block; min-height: 150px;" alt="Mascota UNAMAD">
-                                    </td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-                    
-                    <tr>
-                        <td align="center" style="padding: 10px 20px 25px 20px; bgcolor: #FFFFFF;">
-                            <h4 style="color: #1B365D; margin: 0; font-size: 18px; font-weight: bold; font-family: 'Arial', sans-serif;">¡Que disfrutes mucho de tu día!</h4>
-                        </td>
-                    </tr>
-                    
-                    <tr>
-                        <td bgcolor="#0B1D33" align="center" style="padding: 20px 15px; color: #FFFFFF; font-size: 11px; line-height: 1.5; font-family: 'Arial', sans-serif;">
-                            <span style="color: #38BDF8; font-weight: bold; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">ATENTAMENTE,</span>
-                            <strong style="display: block; font-size: 13px; color: #FFFFFF;">Unidad de Seguimiento al Egresado y Bolsa de Trabajo - DAA</strong>
-                            <span style="color: #94A3B8; display: block; margin-top: 2px;">Universidad Nacional Amazónica de Madre de Dios</span>
-                        </td>
-                    </tr>
-                </table>
-            </div>
-            """
+            # Convertir la imagen final a bytes legibles por el botón de descarga
+            buf = io.BytesIO()
+            imagen_tarjeta.save(buf, format="PNG")
+            byte_im = buf.getvalue()
             
-            # Mostrar la interfaz organizada de Streamlit
-            col1, col2 = st.columns([1.3, 1.0])
+            col1, col2 = st.columns([1.2, 1.0])
             with col1:
-                # Renderizador HTML con dimensiones bloqueadas
-                st.components.v1.html(html_tarjeta, height=560, scrolling=False)
-                st.caption("📸 *Toma una captura de pantalla a la tarjeta para enviarla nítida y con las proporciones correctas.*")
+                # Muestra la imagen generada de forma nativa e idéntica
+                st.image(imagen_tarjeta, use_container_width=True, caption=f"Vista previa de la Tarjeta Oficial de {nombre_egresado}")
+                
+                # --- BOTÓN DE DESCARGA DIRECTA FUNCIONAL ---
+                st.download_button(
+                    label=f"📥 Descargar Tarjeta PNG Real",
+                    data=byte_im,
+                    file_name=f"Tarjeta_{nombre_egresado.replace(' ', '_')}.png",
+                    mime="image/png",
+                    key=f"btn_descarga_{index}"
+                )
                 
             with col2:
                 st.markdown(f"### 🥳 {nombre_egresado}")
                 st.info(texto_whatsapp)
-                st.markdown(f'<a href="{link_wa}" target="_blank" style="text-decoration:none;"><button style="background-color:#25D366; color:white; border:none; padding:12px 20px; font-weight:bold; border-radius:8px; width:100%; cursor:pointer; font-size:15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">💬 Enviar por WhatsApp</button></a>', unsafe_allow_html=True)
+                st.markdown(f'<a href="{link_wa}" target="_blank" style="text-decoration:none;"><button style="background-color:#25D366; color:white; border:none; padding:12px 20px; font-weight:bold; border-radius:8px; width:100%; cursor:pointer; font-size:15px;">💬 Enviar por WhatsApp</button></a>', unsafe_allow_html=True)
             st.markdown("---")
             
     if contador == 0:
         st.info(f"🎈 No se encontraron cumpleañeros para la fecha seleccionada ({dia_buscado}).")
 
 except Exception as e:
-    st.error(f"Error general del sistema: {e}")
+    st.error(f"Error crítico en el sistema de tarjetas: {e}")
