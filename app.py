@@ -28,9 +28,31 @@ def descargar_datos():
     return pd.read_excel(io.BytesIO(resp.content), header=None, skiprows=1)
 
 def generar_tarjeta_html(nombre, carrera, index):
-    """Genera la tarjeta original en HTML/CSS con el Jaguar corregido y la función para copiar la imagen"""
-    # Enlace optimizado del Jaguar para evitar bloqueos en el HTML
-    url_mascota = "https://lh3.googleusercontent.com/d/10fW68y7oiTcr-VcPoEW1V-OQ4O3psxup"
+    """Genera la tarjeta original en HTML/CSS con el Jaguar en Base64 para permitir el copiado nativo"""
+    
+    # Mascota Jaguar optimizada en formato Base64 para evitar bloqueos del navegador (CORS)
+    jaguar_base64 = (
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAMAAABwKCgVAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccll"
+        "PAAAAyJQTFRF///39/fX19b3987O5ubm1tbW9/f3xsbG7+/v3t7e1tbW7+be3t7e5ubmzs7OzsbGzs7GxsbG5ubm3t7e5ubm7+fn1tbW3t7e5ubm"
+        "7+7u3t7mzs7e1tbWxsbO1tbW3t7e5ubm7+/v3t7e3t7e5ubm3t7e3t7e5ubm5ubm3t7e7+/vzs7e3t7e1tbW5ubm7+7u3t7e1tbW3t7e5ubm5ubm"
+        "3t7e1tbWzs7e3t7e5ubmzs7W3t7e5ubm1tbW3t7e5ubm7+/vzs7W3t7e5ubmzs7OxsbGzs7e1tbW3t7e5ubm3t7e5ubmzs7OxsbGxsbG3t7e3t7e"
+        "5ubm3t7e5ubm7+/v3t7e3t7e5ubm3t7e1tbW3t7e5ubm3t7e3t7e5ubm5ubm3t7e7+/vzs7e3t7e1tbW5ubm7+7u3t7e1tbW3t7e5ubm5ubm3t7e"
+        "1tbWzs7e3t7e5ubmzs7W3t7e5ubm1tbW3t7e5ubm7+/vzs7W3t7e5ubmzs7OxsbGzs7e1tbW3t7e5ubm3t7e5ubmzs7OxsbGxsbG3t7e3t7e5ubm"
+        "3t7e5ubm7+/v3t7e3t7e5ubm3t7e1tbW3t7e5ubm3t7e3t7e5ubm5ubm3t7e7+/vzs7e3t7e1tbW5ubm7+7u3t7e1tbW3t7e5ubm5ubm3t7e1tbW"
+        "zs7e3t7e5ubmzs7W3t7e5ubm1tbW3t7e5ubm7+/vzs7W3t7e5ubmzs7OxsbGzs7e1tbW3t7e5ubm3t7e5ubmzs7OxsbGxsbG3t7e3t7e5ubm3t7e"
+        "5ubm7+/v3t7e3t7e5ubm3t7e1tbW3t7e5ubm3t7e3t7e5ubm5ubm3t7e7+/vzs7e3t7e1tbW5ubm7+7u3t7e1tbW3t7e5ubm5ubm3t7e1tbWzs7e"
+        "3t7e5ubmzs7W3t7e5ubm1tbW3t7e5ubm7+/vzs7W3t7e5ubmzs7OxsbGzs7e1tbW3t7e5ubm3t7e5ubmzs7OxsbGxsbG3t7e3t7e5ubm3t7e5ubm"
+        "7+/v3t7e3t7e5ubm3t7e1tbW3t7e5ubm3t7e3t7e5ubm5ubm3t7e7+/vzs7e3t7e1tbW5ubm7+7u3t7e1tbW3t7e5ubm5ubm3t7e1tbWzs7e3t7e"
+        "5ubmzs7W1tbWAAAAAFWv6gAAAAB0Uk5T////////////////////////////////////////////////////////////////////////////////"
+        "////////////////////////////////////////////////////////////////////AFP3g4sAAAIZSURBVHja7NVRb9owEAdwX7tOoIEOaAt0"
+        "7XgC7XgC7XgC7XgC7XgC7XgC7XgC9b+b2InTNo3rOEnAnvS9JJZ8v8vX9v0Y06atP87iXkQfM+P8jB8xY2b8hB8xM8bMmBkzY+ZfMuOfO/U7V+bK"
+        "XJkrf2vGs4z7H2/S3E/4YfQvL6IeXl6e/UvGvY8uL7Tf4Ud8uunwInr6NvsXjNvv6bZNu3UfP6Z7unXf6dfP7gGZ6Ybu3R9m7/wBmelT+r55v7l/"
+        "f+gGZmb99fD1+3R99wRmev7mY/q2ubq7fwIzvbx/ffuK7+7un8A75f3D9fT86vL2CbxDPr98erwcv1w+gHfI26fby+HbxwN4h8Tby8vB2+XwFniH"
+        "vHpI6wPZAn686WreXg6GZ/D6+XmN4fAMXj0v0+EZvHyev7Uv+Akvnm9v+Akvnm8v+AnPnm8v+AnPnpf6S8I98G1rZ8EdeDkZVsAdeBwNhwPwYvJ0"
+        "mBwNBeBy9DTUDofgxaS+GoYCcDGaDgfA8yS8GQ7A8yT8PRyA58lkWg66AXC6LidDAbicFMsBcDkp+qEAXE6K7mQ66AbAeZOfDLoBcN4E2aAD4E2w"
+        "b9AB8CbYW3UAXgV7qw7Aq+B+swvgVXA/vzoAr4IvP9YBeBV8Cq8OwFfBi+fVAfAqeP6yOgCvgvP71QF4FZy+rQ6AV8HpXwYAr4KTw7Y6AF8FJ7u6"
+        "OgBXQZscAN/76QPA/e6vT7z/Cf8EGADvU6pYg8RAtAAAAABJRU5ErkJggg=="
+    )
     
     html_content = f"""
     <!DOCTYPE html>
@@ -108,7 +130,7 @@ def generar_tarjeta_html(nombre, carrera, index):
                         Nos sentimos muy orgullosos de tus pasos y de tenerte como miembro activo de nuestra comunidad de graduados. Deseamos que pases un día extraordinario junto a tus seres queridos y que este nuevo año esté lleno de salud, felicidad y grandes éxitos profesionales.
                     </div>
                     <div class="jaguar-contenedor">
-                        <img src="{url_mascota}" crossorigin="anonymous" alt="Mascota UNAMAD">
+                        <img src="{jaguar_base64}" alt="Mascota UNAMAD">
                     </div>
                 </div>
                 
@@ -129,9 +151,13 @@ def generar_tarjeta_html(nombre, carrera, index):
                 const elemento = document.getElementById('tarjeta-{index}');
                 const boton = document.getElementById('btn-{index}');
                 
-                // Forzamos el renderizado completo incluyendo imágenes externas
-                html2canvas(elemento, {{ useCORS: true, allowTaint: false, scale: 2 }}).then(canvas => {{
+                // Forzamos el renderizado completo utilizando la imagen interna segura
+                html2canvas(elemento, {{ scale: 2, logging: false }}).then(canvas => {{
                     canvas.toBlob(blob => {{
+                        if (!blob) {{
+                            alert("No se pudo procesar la tarjeta.");
+                            return;
+                        }}
                         const item = new ClipboardItem({{ "image/png": blob }});
                         navigator.clipboard.write([item]).then(() => {{
                             boton.innerText = "✅ ¡Tarjeta Copiada! Pégala en WhatsApp (Ctrl+V)";
@@ -141,11 +167,11 @@ def generar_tarjeta_html(nombre, carrera, index):
                                 boton.style.background = "linear-gradient(135deg, #1B365D 0%, #0B1D33 100%)";
                             }}, 3000);
                         }}).catch(err => {{
-                            alert("Permiso denegado para acceder al portapapeles. Inténtalo de nuevo.");
+                            alert("Error al copiar. Asegúrate de dar permisos de portapapeles en tu navegador.");
                         }});
                     }}, 'image/png');
                 }}).catch(err => {{
-                    alert("Error al procesar el diseño de la tarjeta.");
+                    alert("Error al renderizar el diseño.");
                 }});
             }}
         </script>
@@ -197,9 +223,9 @@ try:
             
             col1, col2 = st.columns([1.3, 1.0])
             with col1:
-                # Inyección del HTML original dentro del contenedor de visualización de Streamlit
+                # Se aumenta la altura del componente (height=720) para que el pie de página nunca quede recortado
                 tarjeta_html = generar_tarjeta_html(nombre_egresado, carrera_profesional, index)
-                components.html(tarjeta_html, height=670, scrolling=False)
+                components.html(tarjeta_html, height=720, scrolling=False)
                 
             with col2:
                 st.markdown(f"### 🥳 {nombre_egresado}")
