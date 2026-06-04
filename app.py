@@ -33,31 +33,30 @@ def crear_tarjeta_perfecta(nombre, carrera):
     imagen = Image.new("RGB", (ancho, alto), "#FFFFFF")
     draw = ImageDraw.Draw(imagen)
     
-    # Intentar usar la fuente preinstalada del sistema con un tamaño grande y legible
+    # Cargamos fuentes estándar integradas sin caracteres especiales para asegurar nitidez absoluta
     try:
-        f_titulo = ImageFont.truetype("DejaVuSans-Bold.ttf", 28)
-        f_subtitulo = ImageFont.truetype("DejaVuSans.ttf", 15)
-        f_cuerpo_bold = ImageFont.truetype("DejaVuSans-Bold.ttf", 18)
-        f_cuerpo = ImageFont.truetype("DejaVuSans.ttf", 17)
-        f_eslogan = ImageFont.truetype("DejaVuSans-Bold.ttf", 22)
-        f_pie_tit = ImageFont.truetype("DejaVuSans-Bold.ttf", 13)
-        f_pie_sub = ImageFont.truetype("DejaVuSans-Bold.ttf", 15)
-        f_pie_univ = ImageFont.truetype("DejaVuSans.ttf", 13)
+        f_titulo = ImageFont.truetype("LiberationSans-Bold.ttf", 26)
+        f_subtitulo = ImageFont.truetype("LiberationSans-Regular.ttf", 14)
+        f_cuerpo_bold = ImageFont.truetype("LiberationSans-Bold.ttf", 18)
+        f_cuerpo = ImageFont.truetype("LiberationSans-Regular.ttf", 16)
+        f_eslogan = ImageFont.truetype("LiberationSans-Bold.ttf", 22)
+        f_pie_tit = ImageFont.truetype("LiberationSans-Bold.ttf", 13)
+        f_pie_sub = ImageFont.truetype("LiberationSans-Bold.ttf", 15)
+        f_pie_univ = ImageFont.truetype("LiberationSans-Regular.ttf", 13)
     except:
-        # Respaldo por defecto si el servidor no tiene fuentes externas (no distorsiona)
         f_titulo = f_subtitulo = f_cuerpo_bold = f_cuerpo = f_eslogan = f_pie_tit = f_pie_sub = f_pie_univ = ImageFont.load_default()
 
-    # 1. Encabezado Azul Institucional
+    # 1. Encabezado Azul Institucional (Sin emojis internos para evitar distorsión)
     draw.rectangle([0, 0, ancho, 145], fill="#1B365D")
-    draw.text((ancho // 2, 45), f"¡Feliz Cumpleaños, {nombre.upper()}! 🎂🎉", fill="#FFFFFF", font=f_titulo, anchor="mm")
+    draw.text((ancho // 2, 50), f"¡Feliz Cumpleaños, {nombre.upper()}!", fill="#FFFFFF", font=f_titulo, anchor="mm")
     draw.text((ancho // 2, 95), f"Egresado(a) de la Carrera Profesional de {carrera.upper()}", fill="#E2E8F0", font=f_subtitulo, anchor="mm")
     
-    # 2. Bloque de Texto del Cuerpo (Formateado línea por línea para evitar amontonamiento)
+    # 2. Bloque de Texto del Cuerpo
     draw.text((50, 195), "Estimado(a) egresado(a),", fill="#1E293B", font=f_cuerpo_bold)
     
     lineas = [
         "Hoy es un día muy especial, y desde la Unidad de Seguimiento al",
-        "Egresado y Bolsa de Trabajo queremos hacerte llegar nuestras más",
+        "Egresado y Bolsa de Trabajo queremos hacerte llevar nuestras más",
         "sinceras felicitaciones por tu cumpleaños.",
         "",
         "Nos sentimos muy orgullosos de tus pasos y de tenerte como miembro activo",
@@ -69,12 +68,12 @@ def crear_tarjeta_perfecta(nombre, carrera):
     y_linea = 245
     for linea in lineas:
         draw.text((50, y_linea), linea, fill="#334155", font=f_cuerpo)
-        y_linea += 34  # Espaciado perfecto entre líneas
+        y_linea += 34  # Espaciado proporcional y limpio
         
     # Mensaje de Cierre destacado
     draw.text((ancho // 2, 590), "¡Que disfrutes mucho de tu día!", fill="#1B365D", font=f_eslogan, anchor="mm")
     
-    # 3. Pie de Página Azul Oscuro Estricto
+    # 3. Pie de Página Azul Oscuro
     draw.rectangle([0, alto - 150, ancho, alto], fill="#0B1D33")
     draw.text((ancho // 2, alto - 110), "ATENTAMENTE,", fill="#38BDF8", font=f_pie_tit, anchor="mm")
     draw.text((ancho // 2, alto - 80), "Unidad de Seguimiento al Egresado y Bolsa de Trabajo - DAA", fill="#FFFFFF", font=f_pie_sub, anchor="mm")
@@ -123,48 +122,3 @@ try:
         if fecha_texto == dia_buscado:
             contador += 1
             nombre_egresado = nombre_completo.split(",")[1].strip() if "," in nombre_completo else nombre_completo
-            
-            # Mensaje estructurado de WhatsApp
-            texto_whatsapp = f"¡HOY CELEBRAMOS SU CUMPLEAÑOS! 🎂🎉\n\nEnviamos un afectuoso saludo a nuestro(a) profesional que festeja su onomástico hoy:\n\n*{nombre_egresado}*\n🎓 {carrera_profesional}\n\n¡Muchas felicidades y que tenga un excelente día! ✨🎈"
-            texto_codificado = urllib.parse.quote(texto_whatsapp)
-            
-            num_limpio = celular_celda
-            if num_limpio and num_limpio != "nan" and len(num_limpio) == 9 and num_limpio.startswith("9"):
-                num_limpio = "51" + num_limpio
-                
-            link_wa = f"https://api.whatsapp.com/send?phone={num_limpio}&text={texto_codificado}"
-            
-            # Generar el archivo de imagen real procesado por Pillow
-            imagen_tarjeta = crear_tarjeta_perfecta(nombre_egresado, carrera_profesional)
-            
-            # Conversión binaria limpia para habilitar la descarga nativa
-            buf = io.BytesIO()
-            imagen_tarjeta.save(buf, format="PNG")
-            byte_im = buf.getvalue()
-            
-            # Renderizado en dos columnas proporcionales
-            col1, col2 = st.columns([1.2, 1.0])
-            with col1:
-                st.image(imagen_tarjeta, use_container_width=True, caption=f"Tarjeta Lista - {nombre_egresado}")
-                
-                # --- BOTÓN DE DESCARGA ESTILIZADO CON CSS MODERNO ---
-                st.download_button(
-                    label=f"💾 Descargar Tarjeta PNG",
-                    data=byte_im,
-                    file_name=f"Tarjeta_{nombre_egresado.replace(' ', '_')}.png",
-                    mime="image/png",
-                    key=f"btn_dl_{index}",
-                    use_container_width=True
-                )
-                
-            with col2:
-                st.markdown(f"### 🥳 {nombre_egresado}")
-                st.info(texto_whatsapp)
-                st.markdown(f'<a href="{link_wa}" target="_blank" style="text-decoration:none;"><button style="background-color:#25D366; color:white; border:none; padding:12px 20px; font-weight:bold; border-radius:8px; width:100%; cursor:pointer; font-size:15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">💬 Enviar por WhatsApp</button></a>', unsafe_allow_html=True)
-            st.markdown("---")
-            
-    if contador == 0:
-        st.info(f"🎈 No se encontraron cumpleañeros para la fecha seleccionada ({dia_buscado}).")
-
-except Exception as e:
-    st.error(f"Error general del sistema: {e}")
