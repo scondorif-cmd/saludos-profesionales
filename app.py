@@ -26,40 +26,19 @@ def descargar_datos():
     else:
         url_descarga = url_google_sheets
     resp = requests.get(url_descarga)
-    # Pandas procesa la lectura manteniendo la integridad de caracteres especiales
     return pd.read_excel(io.BytesIO(resp.content), header=None, skiprows=1)
 
 def conseguir_fuente_servidor(es_bold, tamano):
-    """Descarga e integra dinámicamente tipografías con soporte UTF-8 completo (tildes, Ñ, ¡, ¿)"""
-    nombre_archivo = "fuente_latina_bold.ttf" if es_bold else "fuente_latina_regular.ttf"
+    """Busca de forma exhaustiva fuentes con soporte latino nativo en Linux (Streamlit Cloud)"""
     
-    # Repositorio oficial de Google Fonts (Garantiza renderizado perfecto en servidores Linux)
-    url_font = (
-        "https://github.com/google/fonts/raw/main/ofl/roboto/Roboto-Bold.ttf"
-        if es_bold else
-        "https://github.com/google/fonts/raw/main/ofl/roboto/Roboto-Regular.ttf"
-    )
-    
-    # Descarga local en la caché del servidor (Solo ocurre la primera vez que se ejecuta)
-    if not os.path.exists(nombre_archivo):
-        try:
-            r = requests.get(url_font, timeout=6)
-            with open(nombre_archivo, "wb") as f:
-                f.write(r.content)
-        except:
-            pass
-
-    # Forzar uso del set de caracteres descargado
-    if os.path.exists(nombre_archivo):
-        try:
-            return ImageFont.truetype(nombre_archivo, tamano)
-        except:
-            pass
-            
-    # Rutas físicas secundarias de contingencia en sistemas Linux Debian/Ubuntu
+    # Lista de rutas absolutas de fuentes del sistema Linux de Streamlit que SÍ soportan Ñ y tildes
     rutas_fuentes = [
+        # Ruta estándar de DejaVu (Excelente soporte latino)
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" if es_bold else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        # Ruta alternativa de Liberation (Soporte latino garantizado)
         "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf" if es_bold else "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" if es_bold else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+        # Segunda ruta alternativa de DejaVu en algunas distros Linux minimalistas
+        "/usr/share/fonts/fonts-dejavu/DejaVuSans-Bold.ttf" if es_bold else "/usr/share/fonts/fonts-dejavu/DejaVuSans.ttf"
     ]
     
     for ruta in rutas_fuentes:
@@ -68,7 +47,25 @@ def conseguir_fuente_servidor(es_bold, tamano):
                 return ImageFont.truetype(ruta, tamano)
             except:
                 continue
+
+    # Si el servidor no tiene las rutas anteriores, descargamos directo una fuente latina estándar de respaldo
+    nombre_local = "backup_bold.ttf" if es_bold else "backup_reg.ttf"
+    if not os.path.exists(nombre_local):
+        try:
+            url_font = "https://github.com/google/fonts/raw/main/ofl/roboto/Roboto-Bold.ttf" if es_bold else "https://github.com/google/fonts/raw/main/ofl/roboto/Roboto-Regular.ttf"
+            r = requests.get(url_font, timeout=5)
+            with open(nombre_local, "wb") as f:
+                f.write(r.content)
+        except:
+            pass
+
+    if os.path.exists(nombre_local):
+        try:
+            return ImageFont.truetype(nombre_local, tamano)
+        except:
+            pass
                 
+    # Último recurso del sistema (Pillow cargará su fuente por defecto si todo lo demás falla)
     try:
         return ImageFont.load_default(size=tamano)
     except:
@@ -80,19 +77,22 @@ def crear_tarjeta_perfecta(nombre, carrera):
     imagen = Image.new("RGB", (ancho, alto), "#FFFFFF")
     draw = ImageDraw.Draw(imagen)
     
-    # === ASIGNACIÓN DE TIPOGRAFÍAS CON SOPORTE CORREGIDO ===
-    f_titulo = conseguir_fuente_servidor(True, 32)         # Nombre arriba
+    # === FUENTES DE ALTA RESOLUCIÓN Y GROSOR ===
+    f_titulo = conseguir_fuente_servidor(True, 30)         # Nombre arriba
     f_subtitulo = conseguir_fuente_servidor(False, 15)     # Carrera profesional
-    f_cuerpo_bold = conseguir_fuente_servidor(True, 23)    # "Estimado(a) egresado(a),"
+    f_cuerpo_bold = conseguir_fuente_servidor(True, 22)    # "Estimado(a) egresado(a),"
     f_cuerpo = conseguir_fuente_servidor(False, 19)       # Texto de felicitación
-    f_eslogan = conseguir_fuente_servidor(True, 26)        # ¡Que disfrutes mucho de tu día!
+    f_eslogan = conseguir_fuente_servidor(True, 25)        # ¡Que disfrutes mucho de tu día!
     f_pie_tit = conseguir_fuente_servidor(True, 14)        # ATENTAMENTE,
-    f_pie_sub = conseguir_fuente_servidor(True, 16)        # Unidad de Seguimiento...
+    f_pie_sub = conseguir_fuente_servidor(True, 15)        # Unidad de Seguimiento...
     f_pie_univ = conseguir_fuente_servidor(False, 13)      # Universidad Nacional...
 
     # 1. Banner Superior Azul Institucional
     draw.rectangle([0, 0, ancho, 155], fill="#1B365D")
-    draw.text((ancho // 2, 55), f"¡Feliz Cumpleaños, {nombre.upper()}!", fill="#FFFFFF", font=f_titulo, anchor="mm")
+    
+    # Asegurando el texto del título en variables limpias
+    titulo_saludo = f"\u00A1Feliz Cumplea\u00F1os, {nombre.upper()}!"  # Usa códigos Unicode nativos para ¡ y Ñ
+    draw.text((ancho // 2, 55), titulo_saludo, fill="#FFFFFF", font=f_titulo, anchor="mm")
     
     texto_carrera = f"Egresado(a) de la Carrera Profesional de {carrera.upper()}"
     if len(texto_carrera) > 68:
@@ -100,22 +100,23 @@ def crear_tarjeta_perfecta(nombre, carrera):
     else:
         draw.text((ancho // 2, 110), texto_carrera, fill="#E2E8F0", font=f_subtitulo, anchor="mm")
     
-    # 2. Cuerpo del Mensaje con Ortografía y Tildes Estables
+    # 2. Cuerpo del Mensaje Justificado y con Ortografía Perfecta
     draw.text((50, 205), "Estimado(a) egresado(a),", fill="#1E293B", font=f_cuerpo_bold)
     
+    # Renglones estructurados sin caracteres conflictivos directos
     lineas = [
-        "Hoy es un día muy especial, y desde la",
+        "Hoy es un d\u00EDa muy especial, y desde la", # d\u00EDa = día
         "Unidad de Seguimiento al Egresado y",
         "Bolsa de Trabajo queremos hacerte llegar",
-        "nuestras más sinceras felicitaciones por",
-        "tu cumpleaños.",
+        "nuestras m\u00E1s sinceras felicitaciones por", # m\u00E1s = más
+        "tu cumplea\u00F1os.", # cumplea\u00F1os = cumpleaños
         "",
         "Nos sentimos muy orgullosos de tus pasos y",
         "de tenerte como miembro activo de nuestra",
         "comunidad de graduados. Deseamos que",
-        "pases un día extraordinario junto a tus seres",
-        "queridos y que este nuevo año esté lleno de",
-        "salud, felicidad y grandes éxitos profesionales."
+        "pases un d\u00EDa extraordinario junto a tus seres",
+        "queridos y que este nuevo a\u00F1o est\u00E9 lleno de", # a\u00F1o est\u00E9 = año esté
+        "salud, felicidad y grandes \u00E9xitos profesionales." # \u00E9xitos = éxitos
     ]
     
     y_linea = 260
@@ -123,16 +124,17 @@ def crear_tarjeta_perfecta(nombre, carrera):
         draw.text((50, y_linea), linea, fill="#334155", font=f_cuerpo)
         y_linea += 36  
         
-    # Mensaje de Cierre destacado abajo
-    draw.text((ancho // 2, 705), "¡Que disfrutes mucho de tu día!", fill="#1B365D", font=f_eslogan, anchor="mm")
+    # Mensaje de Cierre destacado abajo usando Unicode Seguro
+    cierre_texto = "\u00A1Que disfrutes mucho de tu d\u00EDa!" # ¡Que disfrutes mucho de tu día!
+    draw.text((ancho // 2, 705), cierre_texto, fill="#1B365D", font=f_eslogan, anchor="mm")
     
-    # 3. Bloque Inferior del Pie de Página (Azul Oscuro Limpio)
+    # 3. Bloque Inferior del Pie de Página (Azul Oscuro con ortografía limpia)
     draw.rectangle([0, alto - 115, ancho, alto], fill="#0B1D33")
     draw.text((ancho // 2, alto - 85), "ATENTAMENTE,", fill="#38BDF8", font=f_pie_tit, anchor="mm")
     draw.text((ancho // 2, alto - 60), "Unidad de Seguimiento al Egresado y Bolsa de Trabajo - DAA", fill="#FFFFFF", font=f_pie_sub, anchor="mm")
-    draw.text((ancho // 2, alto - 35), "Universidad Nacional Amazónica de Madre de Dios", fill="#94A3B8", font=f_pie_univ, anchor="mm")
+    draw.text((ancho // 2, alto - 35), "Universidad Nacional Amaz\u00F3nica de Madre de Dios", fill="#94A3B8", font=f_pie_univ, anchor="mm") # Amaz\u00F3nica
     
-    # 4. Integración de la Mascota Jaguar (Desde Google Drive)
+    # 4. Integración de la Mascota Jaguar (Desde tu Google Drive)
     try:
         id_drive = "10fW68y7oiTcr-VcPoEW1V-OQ4O3psxup"
         url_mascota = f"https://docs.google.com/uc?export=download&id={id_drive}"
@@ -186,7 +188,7 @@ try:
                 
             link_wa = f"https://api.whatsapp.com/send?phone={num_limpio}&text={texto_codificado}"
             
-            # Generar tarjeta con motor tipográfico adaptado
+            # Generar tarjeta final usando el motor interno corregido
             imagen_tarjeta = crear_tarjeta_perfecta(nombre_egresado, carrera_profesional)
             
             buf = io.BytesIO()
