@@ -27,34 +27,31 @@ def descargar_datos():
     resp = requests.get(url_descarga)
     return pd.read_excel(io.BytesIO(resp.content), header=None, skiprows=1)
 
-# DESCARGA DE FUENTES DE GOOGLE: Esto soluciona los cuadrados rotos definitivamente
+# DESCARGA DE FUENTES CORREGIDA (Enlaces estables de jsDelivr)
 @st.cache_data
 def descargar_fuentes():
     try:
-        url_bold = "https://github.com/google/fonts/raw/main/apache/roboto/static/Roboto-Bold.ttf"
-        url_reg = "https://github.com/google/fonts/raw/main/apache/roboto/static/Roboto-Regular.ttf"
+        url_bold = "https://cdn.jsdelivr.net/gh/google/fonts@main/apache/roboto/static/Roboto-Bold.ttf"
+        url_reg = "https://cdn.jsdelivr.net/gh/google/fonts@main/apache/roboto/static/Roboto-Regular.ttf"
         
-        f_bold = io.BytesIO(requests.get(url_bold).content)
-        f_reg = io.BytesIO(requests.get(url_reg).content)
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        f_bold = io.BytesIO(requests.get(url_bold, headers=headers).content)
+        f_reg = io.BytesIO(requests.get(url_reg, headers=headers).content)
         return f_bold, f_reg
     except:
         return None, None
 
 def generar_imagen_tarjeta(nombre, carrera, es_varon):
-    # Lienzo en alta definición (1200x850)
     ancho, alto = 1200, 850
     img = Image.new('RGB', (ancho, alto), color='#F8FAFC')
     draw = ImageDraw.Draw(img)
     
-    # Colores institucionales según género
     color_cabecera = "#1B365D" if es_varon else "#6B21A8"
     color_pie = "#0F172A" if es_varon else "#4C1D95"
     
-    # Dibujar bloques de fondo
     draw.rectangle([0, 0, ancho, 200], fill=color_cabecera)
     draw.rectangle([0, alto-110, ancho, alto], fill=color_pie)
     
-    # Cargar tipografía descargada
     f_bold, f_reg = descargar_fuentes()
     if f_bold and f_reg:
         font_titulo = ImageFont.truetype(f_bold, 44)
@@ -63,13 +60,12 @@ def generar_imagen_tarjeta(nombre, carrera, es_varon):
         font_pie_bold = ImageFont.truetype(f_bold, 22)
         font_pie_reg = ImageFont.truetype(f_reg, 20)
     else:
+        # Respaldo seguro por si falla la red
         font_titulo = font_sub = font_cuerpo = font_pie_bold = font_pie_reg = ImageFont.load_default()
     
-    # Textos principales (Cabecera)
     draw.text((60, 45), f"¡Feliz Cumpleaños, {nombre}!", fill="#FFFFFF", font=font_titulo)
     draw.text((60, 120), f"Egresado(a) de {carrera}", fill="#E2E8F0", font=font_sub)
     
-    # Cuerpo del mensaje (Grande, legible y con tildes perfectas)
     cuerpo_texto = (
         f"Estimado(a) egresado(a),\n\n"
         f"Hoy es un día muy especial, y desde la Unidad de Seguimiento al\n"
@@ -81,7 +77,6 @@ def generar_imagen_tarjeta(nombre, carrera, es_varon):
     )
     draw.text((60, 260), cuerpo_texto, fill="#334155", font=font_cuerpo, spacing=14)
     
-    # Pie de página institucional
     draw.text((60, alto-85), "Unidad de Seguimiento al Egresado y Bolsa de Trabajo", fill="#FFFFFF", font=font_pie_bold)
     draw.text((60, alto-50), "Universidad Nacional Amazónica de Madre de Dios", fill="#CBD5E1", font=font_pie_reg)
     
