@@ -8,19 +8,75 @@ import base64
 import os
 import streamlit.components.v1 as components
 
-# Configuración de la plataforma
-st.set_page_config(page_title="Control de Cumpleaños UNAMAD", page_icon="🎓", layout="centered")
+# Configuración premium de la plataforma
+st.set_page_config(page_title="Control de Cumpleaños UNAMAD", page_icon="🎓", layout="wide")
 
-st.title("🎓 Sistema de Cumpleaños UNAMAD")
-st.write("Control y envío de saludos para egresados desde la nube (PC o Celular).")
+# Estilos CSS globales inyectados para refinar la UI de Streamlit
+st.markdown("""
+    <style>
+    .main .block-container { padding-top: 2rem; padding-bottom: 2rem; }
+    h1 { color: #1B365D; font-weight: 800; font-size: 2.2rem !important; margin-bottom: 0.2rem; }
+    .subtitulo-app { color: #475569; font-size: 1.05rem; margin-bottom: 2rem; }
+    
+    /* Panel de Métricas Estilizado */
+    .panel-metricas {
+        background-color: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 1.25rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    
+    /* Caja contenedora para cada Egresado */
+    .bloque-egresado {
+        background-color: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+    }
+    
+    /* Botón de WhatsApp Nativo Adaptado */
+    .btn-whatsapp-html {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #25D366;
+        color: white !important;
+        border: none;
+        padding: 14px 24px;
+        font-weight: 700;
+        border-radius: 10px;
+        width: 100%;
+        cursor: pointer;
+        font-size: 16px;
+        text-decoration: none;
+        box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+        transition: all 0.2s ease;
+        text-align: center;
+    }
+    .btn-whatsapp-html:hover {
+        background-color: #20BA56;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(37, 211, 102, 0.4);
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+st.markdown("<h1>🎓 Sistema de Cumpleaños UNAMAD</h1>", unsafe_allow_html=True)
+st.markdown("<p class='subtitulo-app'>Gestión institucional y envío automatizado de saludos para la comunidad de egresados.</p>", unsafe_allow_html=True)
 
 # Inicializar el contador de envíos en la sesión por cada día si no existe
 if "registro_envios" not in st.session_state:
     st.session_state.registro_envios = {}
 
-# Selector de fecha interactivo
-fecha_seleccionada = st.date_input("Selecciona la fecha a procesar:", datetime.now())
-dia_buscado = fecha_seleccionada.strftime("%d/%m")
+# Layout de barra de control principal
+col_control1, col_control2 = st.columns([1, 2])
+with col_control1:
+    fecha_seleccionada = st.date_input("📅 Fecha de procesamiento:", datetime.now())
+    dia_buscado = fecha_seleccionada.strftime("%d/%m")
 
 # Inicializar el contador específico para el día seleccionado
 if dia_buscado not in st.session_state.registro_envios:
@@ -38,7 +94,6 @@ def descargar_datos():
     return pd.read_excel(io.BytesIO(resp.content), header=None, skiprows=1)
 
 def obtener_jaguar_base64():
-    """Busca el archivo cumpleanos.png en tu GitHub y lo convierte automáticamente en código real"""
     nombre_archivo = "cumpleanos.png"
     if os.path.exists(nombre_archivo):
         with open(nombre_archivo, "rb") as image_file:
@@ -48,8 +103,6 @@ def obtener_jaguar_base64():
         return "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='110' height='110'><rect width='110' height='110' fill='%23cccccc'/></svg>"
 
 def generar_tarjeta_html(nombre, carrera, index, jaguar_src, titulo_egresado, saludo_inicial):
-    """Genera la tarjeta con personalización de género y estructura optimizada"""
-    
     html_content = f"""
     <!DOCTYPE html>
     <html lang="es">
@@ -57,58 +110,62 @@ def generar_tarjeta_html(nombre, carrera, index, jaguar_src, titulo_egresado, sa
         <meta charset="UTF-8">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
         <style>
-            body {{ margin: 0; padding: 5px; font-family: 'Segoe UI', Arial, sans-serif; background-color: #F8FAFC; }}
+            body {{ margin: 0; padding: 5px; font-family: 'Segoe UI', Arial, sans-serif; background-color: #FFFFFF; }}
             .tarjeta-contenedor {{
                 background-color: #FFFFFF; 
                 border-radius: 12px; 
-                box-shadow: 0 8px 20px rgba(0,0,0,0.15); 
+                box-shadow: 0 8px 24px rgba(0,0,0,0.12); 
                 overflow: hidden; 
-                max-width: 480px; 
+                max-width: 450px; 
                 margin: 0 auto; 
                 border: 1px solid #E2E8F0;
             }}
             .banner-superior {{
                 background: linear-gradient(135deg, #1B365D 0%, #0B1D33 100%); 
-                padding: 25px 15px; 
+                padding: 24px 16px; 
                 text-align: center; 
                 color: white;
             }}
-            .banner-superior h2 {{ margin: 0; font-size: 21px; font-weight: 700; }}
-            .banner-superior p {{ margin: 6px 0 0 0; color: #E2E8F0; font-size: 12px; font-style: italic; }}
+            .banner-superior h2 {{ margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }}
+            .banner-superior p {{ margin: 6px 0 0 0; color: #93C5FD; font-size: 11.5px; font-weight: 500; text-transform: uppercase; }}
             .cuerpo {{ padding: 20px; }}
-            .saludo {{ color: #1E293B; font-weight: bold; font-size: 15px; margin-top: 0; }}
+            .saludo {{ color: #1E293B; font-weight: 700; font-size: 15px; margin-top: 0; margin-bottom: 12px; }}
             
-            .contenido-flex {{ display: flex; gap: 15px; align-items: center; margin-bottom: 15px; }}
-            .texto-mensaje-corto {{ color: #334155; font-size: 13.5px; line-height: 1.6; text-align: justify; flex: 1; }}
-            .jaguar-contenedor {{ width: 115px; text-align: center; flex-shrink: 0; }}
+            .contenido-flex {{ display: flex; gap: 15px; align-items: center; margin-bottom: 12px; }}
+            .texto-mensaje-corto {{ color: #334155; font-size: 13px; line-height: 1.5; text-align: justify; flex: 1; }}
+            .jaguar-contenedor {{ width: 105px; text-align: center; flex-shrink: 0; }}
             .jaguar-contenedor img {{ width: 100%; height: auto; border-radius: 8px; }}
             
-            .texto-mensaje-largo {{ color: #334155; font-size: 13.5px; line-height: 1.6; text-align: justify; width: 100%; clear: both; }}
+            .texto-mensaje-largo {{ color: #334155; font-size: 13px; line-height: 1.5; text-align: justify; width: 100%; }}
             
-            .eslogan {{ color: #1B365D; text-align: center; margin: 20px 0 5px 0; font-size: 16px; font-weight: 700; }}
+            .eslogan {{ color: #1B365D; text-align: center; margin: 18px 0 4px 0; font-size: 15px; font-weight: 700; }}
             .pie-pagina {{
                 background-color: #0B1D33; 
-                padding: 15px; 
+                padding: 14px; 
                 text-align: center; 
                 color: white; 
-                font-size: 11px; 
+                font-size: 10.5px; 
                 line-height: 1.4;
             }}
             .btn-copiar {{
                 display: block;
                 width: 100%;
-                max-width: 480px;
-                margin: 10px auto;
-                background: linear-gradient(135deg, #1B365D 0%, #0B1D33 100%);
-                color: white;
-                border: 1px solid #38BDF8;
-                padding: 12px;
-                font-weight: bold;
-                font-size: 14px;
+                max-width: 450px;
+                margin: 12px auto 0 auto;
+                background: #F1F5F9;
+                color: #334155;
+                border: 1px solid #CBD5E1;
+                padding: 10px;
+                font-weight: 600;
+                font-size: 13px;
                 border-radius: 8px;
                 cursor: pointer;
                 text-align: center;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                transition: all 0.2s;
+            }}
+            .btn-copiar:hover {{
+                background: #E2E8F0;
+                color: #0F172A;
             }}
         </style>
     </head>
@@ -160,17 +217,21 @@ def generar_tarjeta_html(nombre, carrera, index, jaguar_src, titulo_egresado, sa
                         navigator.clipboard.write([item]).then(() => {{
                             boton.innerText = "✅ ¡Tarjeta Copiada! Pégala en WhatsApp (Ctrl+V)";
                             boton.style.background = "#22C55E";
+                            boton.style.color = "#FFFFFF";
+                            boton.style.border = "1px solid #22C55E";
                             
                             setTimeout(() => {{
                                 boton.innerText = "📋 Copiar Tarjeta como Imagen";
-                                boton.style.background = "linear-gradient(135deg, #1B365D 0%, #0B1D33 100%)";
+                                boton.style.background = "#F1F5F9";
+                                boton.style.color = "#334155";
+                                boton.style.border = "1px solid #CBD5E1";
                             }}, 3000);
                         }}).catch(err => {{
-                            alert("Por favor otorga permisos de portapapeles a tu navegador.");
+                            alert("Por favor otorga permisos de portapapeles.");
                         }});
                     }}, 'image/png');
                 }}).catch(err => {{
-                    alert("Error al procesar el lienzo de la tarjeta.");
+                    alert("Error al procesar la tarjeta.");
                 }});
             }}
         </script>
@@ -181,18 +242,26 @@ def generar_tarjeta_html(nombre, carrera, index, jaguar_src, titulo_egresado, sa
 
 try:
     df = descargar_datos()
-    st.success("✅ Conexión con la base de datos exitosa.")
-    
     jaguar_src = obtener_jaguar_base64()
     
-    # Mostrar bloques de métricas arriba bien presentados
-    col_kpi1, col_kpi2 = st.columns(2)
-    with col_kpi1:
-        st.metric(label="📅 Fecha Analizada", value=dia_buscado)
-    with col_kpi2:
-        st.metric(label="📨 Tarjetas Enviadas Hoy", value=f"{st.session_state.registro_envios[dia_buscado]} saludos")
+    # Renderizado estético del cuadro superior de estadísticas
+    st.markdown(f"""
+        <div class="panel-metricas">
+            <div style="display: flex; justify-content: space-around; text-align: center;">
+                <div>
+                    <p style="margin:0; font-size: 0.85rem; color: #64748B; font-weight: 600; text-transform: uppercase;">📅 Fecha de Análisis</p>
+                    <p style="margin:0; font-size: 1.8rem; color: #1B365D; font-weight: 800;">{dia_buscado}</p>
+                </div>
+                <div style="border-left: 1px solid #E2E8F0;"></div>
+                <div>
+                    <p style="margin:0; font-size: 0.85rem; color: #64748B; font-weight: 600; text-transform: uppercase;">📨 Control de Envíos Realizados</p>
+                    <p style="margin:0; font-size: 1.8rem; color: #22C55E; font-weight: 800;">{st.session_state.registro_envios[dia_buscado]} saludos</p>
+                </div>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
 
-    st.subheader(f"🎂 Cumpleañeros del día {dia_buscado}:")
+    st.markdown(f"### 🎂 Lista de Cumpleañeros:")
     contador = 0
     
     for index, fila in df.iterrows():
@@ -219,9 +288,7 @@ try:
         if fecha_texto == dia_buscado:
             contador += 1
             nombre_egresado = nombre_completo.split(",")[1].strip() if "," in nombre_completo else nombre_completo
-            
             nombre_egresado = nombre_egresado.replace("da", "día").replace("Cumpleaos", "Cumpleaños")
-            carrera_profesional = carrera_profesional.strip()
 
             # Lógica adaptada según el género de la columna AQ
             if sexo_celda == "M" or sexo_celda == "MASCULINO":
@@ -246,23 +313,25 @@ try:
                 
             link_wa = f"https://api.whatsapp.com/send?phone={num_limpio}&text={texto_codificado}"
             
-            col1, col2 = st.columns([1.3, 1.0])
+            # Apertura del bloque estilizado individual
+            st.markdown('<div class="bloque-egresado">', unsafe_allow_html=True)
+            
+            col1, col2 = st.columns([1.2, 1.0])
             with col1:
                 tarjeta_html = generar_tarjeta_html(nombre_egresado, carrera_profesional, index, jaguar_src, titulo_egresado, saludo_inicial)
-                components.html(tarjeta_html, height=720, scrolling=False)
+                components.html(tarjeta_html, height=660, scrolling=False)
                 
             with col2:
-                st.markdown(f"### 🥳 {nombre_egresado}")
+                st.markdown(f"<h3 style='margin-top:0; color:#1E293B;'>🥳 {nombre_egresado}</h3>", unsafe_allow_html=True)
                 st.info(texto_whatsapp)
                 
-                # El botón HTML original que NUNCA falla ni bloquea el navegador
-                st.markdown(f'<a href="{link_wa}" target="_blank" style="text-decoration:none;"><button style="background-color:#25D366; color:white; border:none; padding:14px 20px; font-weight:bold; border-radius:8px; width:100%; cursor:pointer; font-size:16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">💬 Enviar por WhatsApp</button></a>', unsafe_allow_html=True)
+                # Enlace HTML perfectamente diseñado con estilos CSS unificados
+                st.markdown(f'<a href="{link_wa}" target="_blank" class="btn-whatsapp-html">💬 Enviar Mensaje a WhatsApp</a>', unsafe_allow_html=True)
                 
                 st.write("")
-                # Casilla manual para registrar que se envió con éxito sin interrumpir el flujo
-                marcar_enviado = st.checkbox("Márcalo aquí si ya enviaste este saludo", key=f"chk_{index}")
+                # Casilla manual de confirmación de envío para refrescar estadísticas dinámicas
+                marcar_enviado = st.checkbox("Confirmar registro de envío para estadística diaria", key=f"chk_{index}")
                 
-                # Manejo del estado interno del check
                 key_estado = f"estado_chk_{index}"
                 if marcar_enviado and not st.session_state.get(key_estado, False):
                     st.session_state[key_estado] = True
@@ -273,10 +342,10 @@ try:
                     st.session_state.registro_envios[dia_buscado] = max(0, st.session_state.registro_envios[dia_buscado] - 1)
                     st.rerun()
 
-            st.markdown("---")
+            st.markdown('</div>', unsafe_allow_html=True)
             
     if contador == 0:
-        st.info(f"🎈 No se encontraron cumpleañeros para la fecha seleccionada ({dia_buscado}).")
+        st.info(f"🎈 No se encontraron egresados registrados que cumplan años en la fecha seleccionada ({dia_buscado}).")
 
 except Exception as e:
-    st.error(f"Error general del sistema: {e}")
+    st.error(f"Error en el flujo principal del sistema: {e}")
