@@ -4,6 +4,8 @@ import requests
 from datetime import datetime
 import urllib.parse
 import io
+import base64
+import os
 import streamlit.components.v1 as components
 
 # Configuración de la plataforma
@@ -24,14 +26,22 @@ def descargar_datos():
         url_descarga = url_google_sheets.split('/edit')[0] + '/export?format=xlsx'
     else:
         url_descarga = url_google_sheets
-    
     resp = requests.get(url_descarga)
-    # Forzar la lectura limpia del binario de Excel para evitar conflictos de caracteres heredados
-    oficina_df = pd.read_excel(io.BytesIO(resp.content), header=None, skiprows=1)
-    return oficina_df
+    return pd.read_excel(io.BytesIO(resp.content), header=None, skiprows=1)
 
-def generar_tarjeta_html(nombre, carrera, index):
-    """Genera la tarjeta con un diseño institucional optimizado usando un emblema CSS nativo"""
+def obtener_jaguar_base64():
+    """Busca el archivo cumpleanos.png en tu GitHub y lo convierte automáticamente en código real"""
+    nombre_archivo = "cumpleanos.png"  # <-- Apunta a tu archivo subido
+    if os.path.exists(nombre_archivo):
+        with open(nombre_archivo, "rb") as image_file:
+            encoded_string = base64.b64encode(image_file.read()).decode()
+            return f"data:image/png;base64,{encoded_string}"
+    else:
+        # Muestra un recuadro gris temporal si el archivo no existe o se está subiendo
+        return "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='110' height='110'><rect width='110' height='110' fill='%23cccccc'/></svg>"
+
+def generar_tarjeta_html(nombre, carrera, index, jaguar_src):
+    """Genera la tarjeta con la codificación de tildes corregida y el jaguar local"""
     
     html_content = f"""
     <!DOCTYPE html>
@@ -56,31 +66,15 @@ def generar_tarjeta_html(nombre, carrera, index):
                 text-align: center; 
                 color: white;
             }}
-            .banner-superior h2 {{ margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.5px; }}
-            .banner-superior p {{ margin: 8px 0 0 0; color: #38BDF8; font-size: 13px; font-weight: 600; text-transform: uppercase; }}
-            .cuerpo {{ padding: 22px; }}
+            .banner-superior h2 {{ margin: 0; font-size: 21px; font-weight: 700; }}
+            .banner-superior p {{ margin: 6px 0 0 0; color: #E2E8F0; font-size: 12px; font-style: italic; }}
+            .cuerpo {{ padding: 20px; }}
             .saludo {{ color: #1E293B; font-weight: bold; font-size: 15px; margin-top: 0; }}
-            .contenido-flex {{ display: flex; gap: 15px; align-items: center; }}
+            .contenido-flex {{ display: flex; gap: 15px; align-items: flex-start; }}
             .texto-mensaje {{ color: #334155; font-size: 13.5px; line-height: 1.6; text-align: justify; flex: 1; }}
-            
-            /* Emblema Académico geométrico sustituto de la imagen */
-            .insignia-academica {{
-                width: 90px;
-                height: 90px;
-                background: linear-gradient(135deg, #FFD700 0%, #B8860B 100%);
-                border-radius: 50%;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-                border: 3px solid #1B365D;
-                flex-shrink: 0;
-            }}
-            .insignia-icono {{ font-size: 32px; margin: 0; padding: 0; line-height: 1; }}
-            .insignia-texto {{ color: #1B365D; font-size: 9px; font-weight: 800; margin-top: 2px; font-family: Arial, sans-serif; }}
-            
-            .eslogan {{ color: #1B365D; text-align: center; margin: 22px 0 5px 0; font-size: 16px; font-weight: 700; font-style: italic; }}
+            .jaguar-contenedor {{ width: 115px; text-align: center; flex-shrink: 0; }}
+            .jaguar-contenedor img {{ width: 100%; height: auto; border-radius: 8px; }}
+            .eslogan {{ color: #1B365D; text-align: center; margin: 20px 0 5px 0; font-size: 16px; font-weight: 700; }}
             .pie-pagina {{
                 background-color: #0B1D33; 
                 padding: 15px; 
@@ -88,13 +82,12 @@ def generar_tarjeta_html(nombre, carrera, index):
                 color: white; 
                 font-size: 11px; 
                 line-height: 1.4;
-                border-top: 2px solid #FFD700;
             }}
             .btn-copiar {{
                 display: block;
                 width: 100%;
                 max-width: 480px;
-                margin: 12px auto;
+                margin: 10px auto;
                 background: linear-gradient(135deg, #1B365D 0%, #0B1D33 100%);
                 color: white;
                 border: 1px solid #38BDF8;
@@ -112,24 +105,22 @@ def generar_tarjeta_html(nombre, carrera, index):
 
         <div id="tarjeta-{index}" class="tarjeta-contenedor">
             <div class="banner-superior">
-                <h2>¡Feliz Cumpleaños, {nombre.upper()}!</h2>
-                <p>Carrera de {carrera.upper()}</p>
+                <h2>&iexcl;Feliz Cumplea&ntilde;os, {nombre.upper()}!</h2>
+                <p>Egresado(a) de la Carrera Profesional de {carrera.upper()}</p>
             </div>
             
             <div class="cuerpo">
                 <p class="saludo">Estimado(a) egresado(a),</p>
                 <div class="contenido-flex">
                     <div class="texto-mensaje">
-                        Hoy es un día muy especial, y desde la <strong>Unidad de Seguimiento al Egresado y Bolsa de Trabajo</strong> queremos hacerte llegar nuestras más sinceras felicitaciones por tu cumpleaños.<br><br>
-                        Nos sentimos muy orgullosos de tus pasos y de tenerte como miembro activo de nuestra comunidad de graduados. Deseamos que este nuevo año esté lleno de salud, felicidad y grandes éxitos profesionales.
+                        Hoy es un d&iacute;a muy especial, y desde la <strong>Unidad de Seguimiento al Egresado y Bolsa de Trabajo</strong> queremos hacerte llegar nuestras m&aacute;s sinceras felicitaciones por tu cumpleaños.<br><br>
+                        Nos sentimos muy orgullosos de tus pasos y de tenerte como miembro activo de nuestra comunidad de graduados. Deseamos que pases un d&iacute;a extraordinario junto a tus seres queridos y que este nuevo a&ntilde;o est&eacute; lleno de salud, felicidad y grandes &eacute;xitos profesionales.
                     </div>
-                    
-                    <div class="insignia-academica">
-                        <div class="insignia-icono">🎓</div>
-                        <div class="insignia-texto">UNAMAD</div>
+                    <div class="jaguar-contenedor">
+                        <img src="{jaguar_src}" alt="Mascota UNAMAD">
                     </div>
                 </div>
-                <div class="eslogan">¡Que disfrutes mucho de tu día!</div>
+                <div class="eslogan">&iexcl;Que disfrutes mucho de tu d&iacute;a!</div>
             </div>
             
             <div class="pie-pagina">
@@ -139,14 +130,14 @@ def generar_tarjeta_html(nombre, carrera, index):
             </div>
         </div>
 
-        <button id="btn-copy-{index}" class="btn-copiar" onclick="copiarTarjeta()">📋 Descargar Tarjeta PNG</button>
+        <button id="btn-bottom-{index}" class="btn-copiar" onclick="copiarTarjeta()">📋 Copiar Tarjeta como Imagen</button>
 
         <script>
             function copiarTarjeta() {{
                 const elemento = document.getElementById('tarjeta-{index}');
-                const boton = document.getElementById('btn-copy-{index}');
+                const boton = document.getElementById('btn-bottom-{index}');
                 
-                html2canvas(elemento, {{ scale: 2, logging: false }}).then(canvas => {{
+                html2canvas(elemento, {{ scale: 2, logging: false, useCORS: true }}).then(canvas => {{
                     canvas.toBlob(blob => {{
                         if(!blob) return;
                         const item = new ClipboardItem({{ "image/png": blob }});
@@ -155,13 +146,15 @@ def generar_tarjeta_html(nombre, carrera, index):
                             boton.style.background = "#22C55E";
                             
                             setTimeout(() => {{
-                                boton.innerText = "📋 Descargar Tarjeta PNG";
+                                boton.innerText = "📋 Copiar Tarjeta como Imagen";
                                 boton.style.background = "linear-gradient(135deg, #1B365D 0%, #0B1D33 100%)";
                             }}, 3000);
                         }}).catch(err => {{
-                            alert("Permite el acceso al portapapeles si tu navegador lo solicita.");
+                            alert("Por favor otorga permisos de portapapeles a tu navegador.");
                         }});
                     }}, 'image/png');
+                }}).catch(err => {{
+                    alert("Error al procesar el lienzo de la tarjeta.");
                 }});
             }}
         </script>
@@ -174,22 +167,20 @@ try:
     df = descargar_datos()
     st.success("✅ Conexión con la base de datos exitosa.")
     
+    # Cargar la imagen del Jaguar desde el repositorio de GitHub usando el archivo cumpleanos.png
+    jaguar_src = obtener_jaguar_base64()
+    
     st.subheader(f"🎂 Cumpleañeros del día {dia_buscado}:")
     contador = 0
     
     for index, fila in df.iterrows():
         try:
-            # Re-codificación manual preventiva para limpiar tildes y caracteres extraños de las celdas
-            nombre_completo = str(fila[3]).encode('latin1', errors='ignore').decode('utf-8', errors='ignore').strip()       
-            carrera_profesional = str(fila[4]).encode('latin1', errors='ignore').decode('utf-8', errors='ignore').strip()   
+            nombre_completo = str(fila[3]).strip()       
+            carrera_profesional = str(fila[4]).strip()   
             fecha_celda = str(fila[43]).strip()          
             celular_celda = str(fila[7]).strip().replace(".0", "").replace(" ", "")
         except:
-            # Si falla la codificación fina, procedemos con el string estándar limpio
-            nombre_completo = str(fila[3]).strip()
-            carrera_profesional = str(fila[4]).strip()
-            fecha_celda = str(fila[43]).strip()
-            celular_celda = str(fila[7]).strip().replace(".0", "").replace(" ", "")
+            continue
             
         if not fecha_celda or fecha_celda == "nan" or fecha_celda == "-":
             continue
@@ -206,7 +197,10 @@ try:
             contador += 1
             nombre_egresado = nombre_completo.split(",")[1].strip() if "," in nombre_completo else nombre_completo
             
-            # Formateo de texto plano para WhatsApp sin caracteres corruptos
+            # Limpieza corregida de codificaciones corruptas procedentes del Excel
+            nombre_egresado = nombre_egresado.replace("da", "día").replace("Cumpleaos", "Cumpleaños")
+            carrera_profesional = carrera_profesional.strip()
+
             texto_whatsapp = f"¡HOY CELEBRAMOS SU CUMPLEAÑOS! 🎂🎉\n\nEnviamos un afectuoso saludo a nuestro(a) profesional que festeja su onomástico hoy:\n\n*{nombre_egresado}*\n🎓 {carrera_profesional}\n\n¡Muchas felicidades y que tenga un excelente día! ✨🎈"
             texto_codificado = urllib.parse.quote(texto_whatsapp)
             
@@ -216,10 +210,10 @@ try:
                 
             link_wa = f"https://api.whatsapp.com/send?phone={num_limpio}&text={texto_codificado}"
             
-            col1, col2 = st.columns([1.2, 1.0])
+            col1, col2 = st.columns([1.3, 1.0])
             with col1:
-                tarjeta_html = generar_tarjeta_html(nombre_egresado, carrera_profesional, index)
-                components.html(tarjeta_html, height=690, scrolling=False)
+                tarjeta_html = generar_tarjeta_html(nombre_egresado, carrera_profesional, index, jaguar_src)
+                components.html(tarjeta_html, height=720, scrolling=False)
                 
             with col2:
                 st.markdown(f"### 🥳 {nombre_egresado}")
