@@ -28,28 +28,10 @@ def descargar_datos():
     return pd.read_excel(io.BytesIO(resp.content), header=None, skiprows=1)
 
 def generar_tarjeta_html(nombre, carrera, index):
-    """Genera la tarjeta original con el código Base64 real del Jaguar y doble botón de copiado"""
+    """Genera la tarjeta original con la URL pública optimizada del Jaguar"""
     
-    # Código binario real de la mascota para evitar cualquier bloqueo de red
-    jaguar_real_base64 = (
-        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAMAAABwKCgVAAAAw1BMVEVHcEwAAwYFCAsLDQ8PEhMWFhkaGxw"
-        "eHyAiIyQmJioqKzM0NTY3Nzo7PD0+P0BBQ0RGR0hJSktMTU5PUVNWV1haW1xdXmFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn"
-        "9AQUJCQ0RFRkdJSktMTU5PUVJTVFVWV1hZWltbXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouM"
-        "jY6PkJGSk5SVlpeYmZqbnJ2en6AhwscbAAAAAXRSTlMAQObYZgAAA7ZJREFUaN7tmYly2jAQhXcmY8wNMc0hYAsJhAAJUKD3f9vYsmS"
-        "M7Iwt0p0OfzMdaSTpfvveSgshOcaIscYaa6yxvloIOf6R67puPZ9Z72bW1g7D0I3DM6Y8+S7W+7ZtBf6+XgR04Xw+E66AcoA6gEKAjE"
-        "NfAEnG5/X9U90N/HpdgL9A06ZgCgAnwLpYp473K37SgAn8A8A1oD6wIuALFEt6D3A9wKWAy0Cg09Y6U0S9f92g6uQyFIsS7WwVpB9D9K"
-        "bCby3UoPps87uA6qN9TfS9pZ2NoPq9/W6ZpYF8B6G2zNJEvZ9IewN0fV0mU9LpD09pPZ9w7883N8fF1wWgf9C7ZpY6wnduI9g5X374V"
-        "K13vV+W6C9X/93g6uI87G0mN4NPh7O+X3yYy+8C6gIOnwBfN/jUOfv6fD6Yyw/HsnXN/GagZunvO/fW98sPe/X7O73+w7vOfvHhF0v1"
-        "bQD90+GrXb8vPuyD69v0T29mXf3iw9XU9vXgG+PqFx++8fUdfP2/v69ffPju+r67P8vV99s7uLq9wG+OfvHh9W7/XbNdv/gw5ev7vU3"
-        "/A65+8eE9XN/96uO+fn9n37U96N960fX0XbNd/98Prr63f8Z0/bL4AIBt94Ff39svPvT3u/vMev2y+MCoZrv/p76X6/v+Zg99b794w"
-        "9m76OqXF8vO3YOur37xcf3Gvrtw9Xf0XbOdfZgYVz94P/7h5n7w5m7w7qXf1S/ev3/vN6vXv/fDu99p39Uv3r9/z9Xfd23w7v39p6b"
-        "7xYf7fU/frf399f5vW79b++7uQf/Wu6v9zFzfdw++3v8p53Vf39VfsfMvB2fP/7f198p29X9N0/fN+P0N/eKj+6G8X/7v2q6+X76rf"
-        "7f1V9zYdwD9b8v2b/8A+veP/X9b9N/60L9fv/9T0v1w7wD6f1O2g0+vOof+w/3g0x768fX8D7C9T+/t4w766f7fX6T66fEfeF6/mctv"
-        "XfG7X66/r5Zf3w9T8d9bTfHL7wN/A9ffv+9fC97Sj98Dfkf+7wPv68f9wOf68f760fX8H6jXv6ffH/f9X1L/Nvr7Yf34C/v1t/fPj+"
-        "7XP377P7tf3/F+Wv6b0fP6p/uB5/WP+4Gv9S0XfD/G+r+67S/1b0u/X93F/P/A2xL/m6v8X9Ovv69/u/79vG9eM99O+p9v+O+P6vv9"
-        "L788LwH8Y3B9C+fXCfGagfU/f3767f7f9X9CvH3f2T6Bft39F9Yv1t8f8S9L9/MshYgA7zpiNMTN2vE6Yscbaa6yxxvqXU/4B9+oWW"
-        "G656K8AAAAASUVORK5CYII="
-    )
+    # URL directa que permite renderizado y copiado sin restricciones de seguridad en navegadores
+    url_jaguarcito = "https://i.ibb.co/6wX6b3g/jaguar-unamad.png"
     
     html_content = f"""
     <!DOCTYPE html>
@@ -80,7 +62,7 @@ def generar_tarjeta_html(nombre, carrera, index):
             .saludo {{ color: #1E293B; font-weight: bold; font-size: 15px; margin-top: 0; }}
             .contenido-flex {{ display: flex; gap: 15px; align-items: flex-start; }}
             .texto-mensaje {{ color: #334155; font-size: 13.5px; line-height: 1.6; text-align: justify; flex: 1; }}
-            .jaguar-contenedor {{ width: 100px; text-align: center; flex-shrink: 0; }}
+            .jaguar-contenedor {{ width: 115px; text-align: center; flex-shrink: 0; }}
             .jaguar-contenedor img {{ width: 100%; height: auto; border-radius: 8px; }}
             .eslogan {{ color: #1B365D; text-align: center; margin: 20px 0 5px 0; font-size: 16px; font-weight: 700; }}
             .pie-pagina {{
@@ -111,8 +93,6 @@ def generar_tarjeta_html(nombre, carrera, index):
     </head>
     <body>
 
-        <button id="btn-top-{index}" class="btn-copiar" onclick="copiarTarjeta('btn-top-{index}')">📋 Copiar Tarjeta como Imagen (Botón Superior)</button>
-
         <div id="tarjeta-{index}" class="tarjeta-contenedor">
             <div class="banner-superior">
                 <h2>¡Feliz Cumpleaños, {nombre.upper()}!</h2>
@@ -127,7 +107,7 @@ def generar_tarjeta_html(nombre, carrera, index):
                         Nos sentimos muy orgullosos de tus pasos y de tenerte como miembro activo de nuestra comunidad de graduados. Deseamos que pases un día extraordinario junto a tus seres queridos y que este nuevo año esté lleno de salud, felicidad y grandes éxitos profesionales.
                     </div>
                     <div class="jaguar-contenedor">
-                        <img src="{jaguar_real_base64}" alt="Mascota UNAMAD">
+                        <img src="{url_jaguarcito}" crossorigin="anonymous" alt="Mascota UNAMAD">
                     </div>
                 </div>
                 <div class="eslogan">¡Que disfrutes mucho de tu día!</div>
@@ -140,36 +120,32 @@ def generar_tarjeta_html(nombre, carrera, index):
             </div>
         </div>
 
-        <button id="btn-bottom-{index}" class="btn-copiar" onclick="copiarTarjeta('btn-bottom-{index}')">📋 Copiar Tarjeta como Imagen (Botón Inferior)</button>
+        <button id="btn-bottom-{index}" class="btn-copiar" onclick="copiarTarjeta()">📋 Copiar Tarjeta como Imagen</button>
 
         <script>
-            function copiarTarjeta(buttonId) {{
+            function copiarTarjeta() {{
                 const elemento = document.getElementById('tarjeta-{index}');
-                const boton = document.getElementById(buttonId);
+                const boton = document.getElementById('btn-bottom-{index}');
                 
-                html2canvas(elemento, {{ scale: 2, logging: false }}).then(canvas => {{
+                // useCORS activo para permitir procesar la imagen externa sin errores
+                html2canvas(elemento, {{ scale: 2, useCORS: true, logging: false }}).then(canvas => {{
                     canvas.toBlob(blob => {{
                         if(!blob) return;
                         const item = new ClipboardItem({{ "image/png": blob }});
                         navigator.clipboard.write([item]).then(() => {{
-                            document.getElementById('btn-top-{index}').innerText = "✅ ¡Tarjeta Copiada! Pégala en WhatsApp (Ctrl+V)";
-                            document.getElementById('btn-top-{index}').style.background = "#22C55E";
-                            document.getElementById('btn-bottom-{index}').innerText = "✅ ¡Tarjeta Copiada! Pégala en WhatsApp (Ctrl+V)";
-                            document.getElementById('btn-bottom-{index}').style.background = "#22C55E";
+                            boton.innerText = "✅ ¡Tarjeta Copiada! Pégala en WhatsApp (Ctrl+V)";
+                            boton.style.background = "#22C55E";
                             
                             setTimeout(() => {{
-                                const originalText = "📋 Copiar Tarjeta como Imagen";
-                                const originalBg = "linear-gradient(135deg, #1B365D 0%, #0B1D33 100%)";
-                                
-                                document.getElementById('btn-top-{index}').innerText = originalText + " (Botón Superior)";
-                                document.getElementById('btn-top-{index}').style.background = originalBg;
-                                document.getElementById('btn-bottom-{index}').innerText = originalText + " (Botón Inferior)";
-                                document.getElementById('btn-bottom-{index}').style.background = originalBg;
+                                boton.innerText = "📋 Copiar Tarjeta como Imagen";
+                                boton.style.background = "linear-gradient(135deg, #1B365D 0%, #0B1D33 100%)";
                             }}, 3000);
                         }}).catch(err => {{
-                            alert("Haz clic dentro de la tarjeta o dale permisos al navegador para copiar.");
+                            alert("Por favor da permisos de acceso al portapapeles si tu navegador lo solicita.");
                         }});
                     }}, 'image/png');
+                }}).catch(err => {{
+                    alert("Error al procesar la imagen de la tarjeta.");
                 }});
             }}
         </script>
@@ -220,9 +196,9 @@ try:
             
             col1, col2 = st.columns([1.3, 1.0])
             with col1:
-                # Modificado a height=820 y scrolling=True para evitar recortes del pie de página
+                # Altura ideal de visualización fija
                 tarjeta_html = generar_tarjeta_html(nombre_egresado, carrera_profesional, index)
-                components.html(tarjeta_html, height=820, scrolling=True)
+                components.html(tarjeta_html, height=720, scrolling=False)
                 
             with col2:
                 st.markdown(f"### 🥳 {nombre_egresado}")
