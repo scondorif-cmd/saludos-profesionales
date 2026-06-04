@@ -99,7 +99,7 @@ def obtener_jaguar_base64():
     else:
         return "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='110' height='110'><rect width='110' height='110' fill='%23cccccc'/></svg>"
 
-def generar_tarjeta_html(nombre, carrera, index, jaguar_src, titulo_egresado, saludo_inicial, degradado_color):
+def generar_tarjeta_html(nombre, carrera, index, jaguar_src, titulo_egresado, saludo_inicial, colores):
     html_content = f"""
     <!DOCTYPE html>
     <html lang="es">
@@ -118,7 +118,7 @@ def generar_tarjeta_html(nombre, carrera, index, jaguar_src, titulo_egresado, sa
                 border: 1px solid #E2E8F0;
             }}
             .banner-superior {{
-                background: {degradado_color}; 
+                background: {colores['banner']}; 
                 padding: 24px 16px; 
                 text-align: center; 
                 color: white;
@@ -135,9 +135,9 @@ def generar_tarjeta_html(nombre, carrera, index, jaguar_src, titulo_egresado, sa
             
             .texto-mensaje-largo {{ color: #334155; font-size: 13px; line-height: 1.5; text-align: justify; width: 100%; }}
             
-            .eslogan {{ color: #1B365D; text-align: center; margin: 18px 0 4px 0; font-size: 15px; font-weight: 700; }}
+            .eslogan {{ color: {colores['eslogan']}; text-align: center; margin: 18px 0 4px 0; font-size: 15px; font-weight: 700; }}
             .pie-pagina {{
-                background-color: #0B1D33; 
+                background: {colores['pie_fondo']}; 
                 padding: 14px; 
                 text-align: center; 
                 color: white; 
@@ -194,7 +194,7 @@ def generar_tarjeta_html(nombre, carrera, index, jaguar_src, titulo_egresado, sa
             </div>
             
             <div class="pie-pagina">
-                <span style="color: #38BDF8; font-weight: bold; letter-spacing: 0.5px;">ATENTAMENTE,</span><br>
+                <span style="color: {colores['atentamente']}; font-weight: bold; letter-spacing: 0.5px;">ATENTAMENTE,</span><br>
                 <span style="color: #FFFFFF; font-weight: 600;">Unidad de Seguimiento al Egresado y Bolsa de Trabajo - DAA</span><br>
                 <span style="color: #94A3B8;">Universidad Nacional Amazónica de Madre de Dios</span>
             </div>
@@ -290,24 +290,42 @@ try:
             # Identificador único para el control estricto del egresado
             id_unico_egresado = f"{nombre_egresado}_{dia_buscado}"
 
-            # Lógica adaptada según el género de la columna AQ para Textos y Colores Corporativos
-            if sexo_celda == "M" or sexo_celda == "MASCULINO":
+            # Definición de diccionarios de color por género para una consistencia total al 100%
+            colores_render = {}
+
+            if sexo_celda in ["M", "MASCULINO"]:
                 titulo_egresado = "Egresado"
                 saludo_inicial = "Estimado egresado"
                 art_saludo = "nuestro profesional"
-                # Degradado institucional azul ejecutivo
-                degradado_color = "linear-gradient(135deg, #1B365D 0%, #2A52BE 100%)"
-            elif sexo_celda == "F" or sexo_celda == "FEMENINO":
+                
+                colores_render = {
+                    'banner': 'linear-gradient(135deg, #1B365D 0%, #2A52BE 100%)', # Azul institucional ejecutivo
+                    'eslogan': '#1B365D',
+                    'atentamente': '#38BDF8', # Azul claro brillante
+                    'pie_fondo': '#0B1D33'
+                }
+            elif sexo_celda in ["F", "FEMENINO"]:
                 titulo_egresado = "Egresada"
                 saludo_inicial = "Estimada egresada"
                 art_saludo = "nuestra profesional"
-                # Degradado institucional púrpura guinda (Fiel a la imagen original)
-                degradado_color = "linear-gradient(135deg, #7D1D7F 0%, #521454 100%)"
+                
+                colores_render = {
+                    'banner': 'linear-gradient(135deg, #800080 0%, #5A005A 100%)', # Púrpura/Guinda vibrante corporativo
+                    'eslogan': '#800080',                                         # Eslogan a juego en púrpura
+                    'atentamente': '#F472B6',                                     # Rosa/Fucsia institucional para destacar el ATENTAMENTE
+                    'pie_fondo': '#3B003B'                                        # Guinda oscuro profundo para el fondo del pie
+                }
             else:
                 titulo_egresado = "Egresado(a)"
                 saludo_inicial = "Estimado(a) egresado(a)"
                 art_saludo = "nuestro(a) profesional"
-                degradado_color = "linear-gradient(135deg, #1B365D 0%, #0B1D33 100%)"
+                
+                colores_render = {
+                    'banner': 'linear-gradient(135deg, #1B365D 0%, #0B1D33 100%)',
+                    'eslogan': '#1B365D',
+                    'atentamente': '#38BDF8',
+                    'pie_fondo': '#0B1D33'
+                }
 
             texto_whatsapp = f"¡HOY CELEBRAMOS SU CUMPLEAÑOS! 🎂🎉\n\nEnviamos un afectuoso saludo a {art_saludo} que festeja su onomástico hoy:\n\n*{nombre_egresado}*\n🎓 {titulo_egresado} de {carrera_profesional}\n\n¡Muchas felicidades y que tenga un excelente día! ✨🎈"
             texto_codificado = urllib.parse.quote(texto_whatsapp)
@@ -323,7 +341,8 @@ try:
             
             col1, col2 = st.columns([1.2, 1.0])
             with col1:
-                tarjeta_html = generar_tarjeta_html(nombre_egresado, carrera_profesional, index, jaguar_src, titulo_egresado, saludo_inicial, degradado_color)
+                # Se envía el diccionario completo 'colores_render' mapeando todas las propiedades visuales
+                tarjeta_html = generar_tarjeta_html(nombre_egresado, carrera_profesional, index, jaguar_src, titulo_egresado, saludo_inicial, colores_render)
                 components.html(tarjeta_html, height=660, scrolling=False)
                 
             with col2:
@@ -334,15 +353,12 @@ try:
                 ya_enviado = id_unico_egresado in st.session_state.egresados_saludados
                 
                 if ya_enviado:
-                    # El botón cambia visualmente indicando éxito y se desactiva para evitar reconteos
                     st.button(f"✅ Saludo registrado para {nombre_egresado}", key=f"btn_success_{index}", disabled=True)
                 else:
-                    # Botón unificado que ejecuta la suma única y abre WhatsApp
                     if st.button(f"💬 Enviar por WhatsApp", key=f"btn_action_{index}"):
                         st.session_state.egresados_saludados.add(id_unico_egresado)
                         st.session_state.registro_envios[dia_buscado] += 1
                         
-                        # Inyección segura de JS para saltarse bloqueos pop-up
                         components.html(f"""
                             <script>
                                 window.open("{link_wa}", "_blank");
