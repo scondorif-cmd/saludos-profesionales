@@ -39,8 +39,8 @@ def obtener_jaguar_base64():
     else:
         return "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='110' height='110'><rect width='110' height='110' fill='%23cccccc'/></svg>"
 
-def generar_tarjeta_html(nombre, carrera, index, jaguar_src):
-    """Genera la tarjeta con el emoji añadido y la estructura de texto totalmente expandida"""
+def generar_tarjeta_html(nombre, carrera, index, jaguar_src, titulo_egresado, saludo_inicial):
+    """Genera la tarjeta con personalización de género y estructura optimizada"""
     
     html_content = f"""
     <!DOCTYPE html>
@@ -70,13 +70,11 @@ def generar_tarjeta_html(nombre, carrera, index, jaguar_src):
             .cuerpo {{ padding: 20px; }}
             .saludo {{ color: #1E293B; font-weight: bold; font-size: 15px; margin-top: 0; }}
             
-            /* Bloque flex superior: Mensaje inicial al lado de la imagen */
             .contenido-flex {{ display: flex; gap: 15px; align-items: center; margin-bottom: 15px; }}
             .texto-mensaje-corto {{ color: #334155; font-size: 13.5px; line-height: 1.6; text-align: justify; flex: 1; }}
             .jaguar-contenedor {{ width: 115px; text-align: center; flex-shrink: 0; }}
             .jaguar-contenedor img {{ width: 100%; height: auto; border-radius: 8px; }}
             
-            /* Bloque de texto inferior expandido al 100% de ancho */
             .texto-mensaje-largo {{ color: #334155; font-size: 13.5px; line-height: 1.6; text-align: justify; width: 100%; clear: both; }}
             
             .eslogan {{ color: #1B365D; text-align: center; margin: 20px 0 5px 0; font-size: 16px; font-weight: 700; }}
@@ -111,11 +109,11 @@ def generar_tarjeta_html(nombre, carrera, index, jaguar_src):
         <div id="tarjeta-{index}" class="tarjeta-contenedor">
             <div class="banner-superior">
                 <h2>&iexcl;Feliz Cumplea&ntilde;os, {nombre.upper()}! &#129395;</h2>
-                <p>Egresado(a) de la Carrera Profesional de {carrera.upper()}</p>
+                <p>{titulo_egresado} de la Carrera Profesional de {carrera.upper()}</p>
             </div>
             
             <div class="cuerpo">
-                <p class="saludo">Estimado(a) egresado(a),</p>
+                <p class="saludo">{saludo_inicial},</p>
                 
                 <div class="contenido-flex">
                     <div class="texto-mensaje-corto">
@@ -186,6 +184,7 @@ try:
         try:
             nombre_completo = str(fila[3]).strip()       
             carrera_profesional = str(fila[4]).strip()   
+            sexo_celda = str(fila[5]).strip().upper()  # <-- Lee la columna de Sexo (ajusta el índice si varía)
             fecha_celda = str(fila[43]).strip()          
             celular_celda = str(fila[7]).strip().replace(".0", "").replace(" ", "")
         except:
@@ -209,7 +208,22 @@ try:
             nombre_egresado = nombre_egresado.replace("da", "día").replace("Cumpleaos", "Cumpleaños")
             carrera_profesional = carrera_profesional.strip()
 
-            texto_whatsapp = f"¡HOY CELEBRAMOS SU CUMPLEAÑOS! 🎂🎉\n\nEnviamos un afectuoso saludo a nuestro(a) profesional que festeja su onomástico hoy:\n\n*{nombre_egresado}*\n🎓 {carrera_profesional}\n\n¡Muchas felicidades y que tenga un excelente día! ✨🎈"
+            # Lógica de personalización por género
+            if sexo_celda == "M" or sexo_celda == "MASCULINO":
+                titulo_egresado = "Egresado"
+                saludo_inicial = "Estimado egresado"
+                art_saludo = "nuestro profesional"
+            elif sexo_celda == "F" or sexo_celda == "FEMENINO":
+                titulo_egresado = "Egresada"
+                saludo_inicial = "Estimada egresada"
+                art_saludo = "nuestra profesional"
+            else:
+                # Caso de respaldo si la celda no tiene datos válidos
+                titulo_egresado = "Egresado(a)"
+                saludo_inicial = "Estimado(a) egresado(a)"
+                art_saludo = "nuestro(a) profesional"
+
+            texto_whatsapp = f"¡HOY CELEBRAMOS SU CUMPLEAÑOS! 🎂🎉\n\nEnviamos un afectuoso saludo a {art_saludo} que festeja su onomástico hoy:\n\n*{nombre_egresado}*\n🎓 {titulo_egresado} de {carrera_profesional}\n\n¡Muchas felicidades y que tenga un excelente día! ✨🎈"
             texto_codificado = urllib.parse.quote(texto_whatsapp)
             
             num_limpio = celular_celda
@@ -220,7 +234,7 @@ try:
             
             col1, col2 = st.columns([1.3, 1.0])
             with col1:
-                tarjeta_html = generar_tarjeta_html(nombre_egresado, carrera_profesional, index, jaguar_src)
+                tarjeta_html = generar_tarjeta_html(nombre_egresado, carrera_profesional, index, jaguar_src, titulo_egresado, saludo_inicial)
                 components.html(tarjeta_html, height=720, scrolling=False)
                 
             with col2:
