@@ -4,6 +4,7 @@ import requests
 from datetime import datetime
 import urllib.parse
 import io
+import os
 from PIL import Image, ImageDraw, ImageFont
 
 # Configuración de la plataforma
@@ -27,97 +28,54 @@ def descargar_datos():
     resp = requests.get(url_descarga)
     return pd.read_excel(io.BytesIO(resp.content), header=None, skiprows=1)
 
-@st.cache_data(ttl=3600)
-def cargar_fuente_web(es_bold, tamano):
-    """Descarga dinámicamente tipografías modernas con soporte nativo de tildes y Ñ en español"""
+def conseguir_fuente_servidor(es_bold, tamano):
+    """Busca de forma exhaustiva fuentes robustas y escalables en Linux Streamlit"""
+    # Lista de rutas típicas de fuentes en servidores Debian/Ubuntu (donde corre Streamlit)
+    rutas_fuentes = [
+        # 1. Ruta absoluta de alta calidad (suelen estar en Debian 11+)
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf" if es_bold else "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" if es_bold else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf" if es_bold else "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
+        # 2. Ruta de respaldo
+        "/usr/share/fonts/X11/TTF/luxisb.ttf" if es_bold else "/usr/share/fonts/X11/TTF/luxisr.ttf"
+    ]
+    
+    for ruta in rutas_fuentes:
+        if os.path.exists(ruta):
+            try:
+                return ImageFont.truetype(ruta, tamano)
+            except:
+                continue
+                
+    # Si todo falla, intenta cargar por nombre (funciona en algunos entornos)
     try:
-        if es_bold:
-            url = "https://github.com/google/fonts/raw/main/apache/roboto/Roboto-Bold.ttf"
-        else:
-            url = "https://github.com/google/fonts/raw/main/apache/roboto/Roboto-Regular.ttf"
-        
-        respuesta = requests.get(url, timeout=10)
-        return ImageFont.truetype(io.BytesIO(respuesta.content), tamano)
+        return ImageFont.truetype("DejaVuSans-Bold.ttf" if es_bold else "DejaVuSans.ttf", tamano)
     except:
-        # En caso de un fallo extremo de red, usa la fuente de respaldo del sistema escalada
+        # Último recurso antes del colapso: usar la básica pero escalada si la versión de Pillow lo permite
         try:
             return ImageFont.load_default(size=tamano)
         except:
             return ImageFont.load_default()
 
-def dibujar_texto_justificado(draw, texto, x_inicio, y_inicio, ancho_maximo, font, color="#334155", interlineado=30):
-    """Genera una distribución matemática exacta de espacios para justificar bloques de texto de manera perfecta"""
-    palabras = texto.split()
-    if not palabras:
-        return y_inicio
-
-    lineas = []
-    linea_actual = []
-    
-    # 1. Agrupar palabras respetando el ancho límite
-    for palabra in palabras:
-        test_linea = ' '.join(linea_actual + [palabra])
-        bbox = draw.textbbox((0, 0), test_linea, font=font)
-        ancho_test = bbox[2] - bbox[0]
-        
-        if ancho_test <= ancho_maximo:
-            linea_actual.append(palabra)
-        else:
-            if linea_actual:
-                lineas.append(linea_actual)
-            linea_actual = [palabra]
-    if linea_actual:
-        lineas.append(linea_actual)
-
-    y = y_inicio
-    
-    # 2. Renderizar cada línea de forma justificada
-    for idx, linea in enumerate(lineas):
-        es_ultima_linea = (idx == len(lineas) - 1)
-        
-        # Si es la última línea o solo tiene una palabra, se alinea de forma natural a la izquierda
-        if es_ultima_linea or len(linea) == 1:
-            texto_linea = ' '.join(linea)
-            draw.text((x_inicio, y), texto_linea, fill=color, font=font)
-        else:
-            # Calcular el espacio exacto que ocupan los caracteres juntos (sin espacios intermedios)
-            bbox_letras = draw.textbbox((0, 0), ''.join(linea), font=font)
-            ancho_letras = bbox_letras[2] - bbox_letras[0]
-            
-            # Repartir equitativamente el espacio en blanco sobrante
-            espacio_disponible = ancho_maximo - ancho_letras
-            espacio_entre_palabras = espacio_disponible / (len(linea) - 1)
-            
-            x_cursor = x_inicio
-            for i, palabra in enumerate(linea):
-                draw.text((x_cursor, y), palabra, fill=color, font=font)
-                bbox_p = draw.textbbox((0, 0), palabra, font=font)
-                ancho_p = bbox_p[2] - bbox_p[0]
-                x_cursor += ancho_p + espacio_entre_palabras
-                
-        y += interlineado
-        
-    return y
-
 def crear_tarjeta_perfecta(nombre, carrera):
-    # Lienzo de alta resolución e institucional
+    # Dimensiones exactas (750 x 850)
     ancho, alto = 750, 850
     imagen = Image.new("RGB", (ancho, alto), "#FFFFFF")
     draw = ImageDraw.Draw(imagen)
     
-    # Carga de fuentes garantizadas desde Google Fonts
-    f_titulo = cargar_fuente_web(True, 30)         
-    f_subtitulo = cargar_fuente_web(False, 14)   
-    f_cuerpo_bold = cargar_fuente_web(True, 20)    
-    f_cuerpo = cargar_fuente_web(False, 17)       
-    f_eslogan = cargar_fuente_web(True, 25)        
-    f_pie_tit = cargar_fuente_web(True, 13)        
-    f_pie_sub = cargar_fuente_web(True, 15)        
-    f_pie_univ = cargar_fuente_web(False, 13)    
+    # === FUENTES DE ALTA RESOLUCIÓN Y GROSOR (Mucho más grandes que antes) ===
+    f_titulo = conseguir_fuente_servidor(True, 32)         # Nombre arriba
+    f_subtitulo = conseguir_fuente_servidor(False, 15)     # Carrera profesional
+    f_cuerpo_bold = conseguir_fuente_servidor(True, 23)    # "Estimado(a) egresado(a),"
+    f_cuerpo = conseguir_fuente_servidor(False, 19)       # Texto de felicitación
+    f_eslogan = conseguir_fuente_servidor(True, 26)        # ¡Que disfrutes mucho de tu día!
+    f_pie_tit = conseguir_fuente_servidor(True, 14)        # ATENTAMENTE,
+    f_pie_sub = conseguir_fuente_servidor(True, 16)        # Unidad de Seguimiento...
+    f_pie_univ = conseguir_fuente_servidor(False, 13)      # Universidad Nacional...
 
-    # 1. Encabezado Azul Premium
+    # 1. Banner Superior Azul Institucional
     draw.rectangle([0, 0, ancho, 155], fill="#1B365D")
-    draw.text((ancho // 2, 55), f"¡Feliz Cumpleaños, {nombre.upper()}!🎂🎉", fill="#FFFFFF", font=f_titulo, anchor="mm")
+    draw.text((ancho // 2, 55), f"¡Feliz Cumpleaños, {nombre.upper()}!", fill="#FFFFFF", font=f_titulo, anchor="mm")
     
     texto_carrera = f"Egresado(a) de la Carrera Profesional de {carrera.upper()}"
     if len(texto_carrera) > 68:
@@ -125,33 +83,47 @@ def crear_tarjeta_perfecta(nombre, carrera):
     else:
         draw.text((ancho // 2, 110), texto_carrera, fill="#E2E8F0", font=f_subtitulo, anchor="mm")
     
-    # 2. Cuerpo del Mensaje con Justificado Impecable
-    draw.text((50, 195), "Estimado(a) egresado(a),", fill="#1E293B", font=f_cuerpo_bold)
+    # 2. Cuerpo del Mensaje Justificado y con Ortografía Perfecta
+    draw.text((50, 205), "Estimado(a) egresado(a),", fill="#1E293B", font=f_cuerpo_bold)
     
-    parrafo_1 = "Hoy es un día muy especial, y desde la Unidad de Seguimiento al Egresado y Bolsa de Trabajo queremos hacerte llegar nuestras más sinceras felicitaciones por tu cumpleaños."
-    parrafo_2 = "Nos sentimos muy orgullosos de tus pasos y de tenerte como miembro activo de nuestra comunidad de graduados. Deseamos que pases un día extraordinario junto a tus seres queridos y que este nuevo año esté lleno de salud, felicidad y grandes éxitos profesionales."
+    # Renglones estructurados a mano con anchos exactos para equilibrar con el Jaguar
+    lineas = [
+        "Hoy es un día muy especial, y desde la",
+        "Unidad de Seguimiento al Egresado y",
+        "Bolsa de Trabajo queremos hacerte llegar",
+        "nuestras más sinceras felicitaciones por",
+        "tu cumpleaños.",
+        "",
+        "Nos sentimos muy orgullosos de tus pasos y",
+        "de tenerte como miembro activo de nuestra",
+        "comunidad de graduados. Deseamos que",
+        "pases un día extraordinario junto a tus seres",
+        "queridos y que este nuevo año esté lleno de",
+        "salud, felicidad y grandes éxitos profesionales."
+    ]
     
-    # Ejecutar la justificación avanzada restringiendo el texto al espacio libre (ancho máximo de 430px)
-    proxima_y = dibujar_texto_justificado(draw, parrafo_1, x_inicio=50, y_inicio=240, ancho_maximo=430, font=f_cuerpo, interlineado=30)
-    dibujar_texto_justificado(draw, parrafo_2, x_inicio=50, y_inicio=proxima_y + 15, ancho_maximo=430, font=f_cuerpo, interlineado=30)
+    y_linea = 260
+    for linea in lineas:
+        draw.text((50, y_linea), linea, fill="#334155", font=f_cuerpo)
+        y_linea += 36  # Separación corporativa nítida
         
-    # Mensaje de Cierre
+    # Mensaje de Cierre destacado abajo
     draw.text((ancho // 2, 705), "¡Que disfrutes mucho de tu día!", fill="#1B365D", font=f_eslogan, anchor="mm")
     
-    # 3. Pie de Página Institucional
+    # 3. Bloque Inferior del Pie de Página (Azul Oscuro con ortografía limpia)
     draw.rectangle([0, alto - 115, ancho, alto], fill="#0B1D33")
     draw.text((ancho // 2, alto - 85), "ATENTAMENTE,", fill="#38BDF8", font=f_pie_tit, anchor="mm")
     draw.text((ancho // 2, alto - 60), "Unidad de Seguimiento al Egresado y Bolsa de Trabajo - DAA", fill="#FFFFFF", font=f_pie_sub, anchor="mm")
     draw.text((ancho // 2, alto - 35), "Universidad Nacional Amazónica de Madre de Dios", fill="#94A3B8", font=f_pie_univ, anchor="mm")
     
-    # 4. Inserción de la Mascota Jaguar (Perfectamente integrada a la derecha)
+    # 4. Integración de la Mascota Jaguar (Desde tu Google Drive)
     try:
         id_drive = "10fW68y7oiTcr-VcPoEW1V-OQ4O3psxup"
         url_mascota = f"https://docs.google.com/uc?export=download&id={id_drive}"
         res_img = requests.get(url_mascota, timeout=10)
         img_mascota = Image.open(io.BytesIO(res_img.content)).convert("RGBA")
-        img_mascota = img_mascota.resize((210, 240)) 
-        imagen.paste(img_mascota, (505, 235), img_mascota) 
+        img_mascota = img_mascota.resize((190, 220)) 
+        imagen.paste(img_mascota, (525, 230), img_mascota) 
     except:
         pass
         
@@ -198,6 +170,7 @@ try:
                 
             link_wa = f"https://api.whatsapp.com/send?phone={num_limpio}&text={texto_codificado}"
             
+            # Generar tarjeta final usando el motor interno del servidor
             imagen_tarjeta = crear_tarjeta_perfecta(nombre_egresado, carrera_profesional)
             
             buf = io.BytesIO()
@@ -208,6 +181,7 @@ try:
             with col1:
                 st.image(imagen_tarjeta, use_container_width=True, caption=f"Tarjeta Oficial - {nombre_egresado}")
                 
+                # Botón de Descarga Estilizado en Azul Premium
                 st.download_button(
                     label="💾 Descargar Tarjeta PNG",
                     data=byte_im,
@@ -217,6 +191,7 @@ try:
                     use_container_width=True
                 )
                 
+                # Inyección estética CSS
                 st.markdown("""
                     <style>
                     div.stDownloadButton > button {
