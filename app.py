@@ -122,3 +122,69 @@ try:
         if fecha_texto == dia_buscado:
             contador += 1
             nombre_egresado = nombre_completo.split(",")[1].strip() if "," in nombre_completo else nombre_completo
+            
+            # Mensaje estructurado de WhatsApp
+            texto_whatsapp = f"¡HOY CELEBRAMOS SU CUMPLEAÑOS! 🎂🎉\n\nEnviamos un afectuoso saludo a nuestro(a) profesional que festeja su onomástico hoy:\n\n*{nombre_egresado}*\n🎓 {carrera_profesional}\n\n¡Muchas felicidades y que tenga un excelente día! ✨🎈"
+            texto_codificado = urllib.parse.quote(texto_whatsapp)
+            
+            num_limpio = celular_celda
+            if num_limpio and num_limpio != "nan" and len(num_limpio) == 9 and num_limpio.startswith("9"):
+                num_limpio = "51" + num_limpio
+                
+            link_wa = f"https://api.whatsapp.com/send?phone={num_limpio}&text={texto_codificado}"
+            
+            # Generar el archivo de imagen real procesado por Pillow
+            imagen_tarjeta = crear_tarjeta_perfecta(nombre_egresado, carrera_profesional)
+            
+            # Conversión binaria limpia para habilitar la descarga nativa
+            buf = io.BytesIO()
+            imagen_tarjeta.save(buf, format="PNG")
+            byte_im = buf.getvalue()
+            
+            # Renderizado en dos columnas proporcionales
+            col1, col2 = st.columns([1.2, 1.0])
+            with col1:
+                st.image(imagen_tarjeta, use_container_width=True, caption=f"Tarjeta Oficial - {nombre_egresado}")
+                
+                # --- BOTÓN DE DESCARGA PRESTIGIO CON CSS PERSONALIZADO ---
+                st.download_button(
+                    label="💾 Descargar Tarjeta PNG",
+                    data=byte_im,
+                    file_name=f"Tarjeta_{nombre_egresado.replace(' ', '_')}.png",
+                    mime="image/png",
+                    key=f"btn_dl_{index}",
+                    use_container_width=True
+                )
+                
+                # Inyección de estilo para transformar el botón gris feo en un botón institucional elegante
+                st.markdown("""
+                    <style>
+                    div.stDownloadButton > button {
+                        background: linear-gradient(135deg, #1B365D 0%, #0B1D33 100%) !important;
+                        color: white !important;
+                        border: 1px solid #38BDF8 !important;
+                        padding: 10px 24px !important;
+                        font-weight: bold !important;
+                        border-radius: 8px !important;
+                        transition: all 0.3s ease !important;
+                        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15) !important;
+                    }
+                    div.stDownloadButton > button:hover {
+                        background: linear-gradient(135deg, #38BDF8 0%, #1B365D 100%) !important;
+                        transform: translateY(-2px) !important;
+                        box-shadow: 0 6px 12px rgba(56, 189, 248, 0.3) !important;
+                    }
+                    </style>
+                """, unsafe_allow_html=True)
+                
+            with col2:
+                st.markdown(f"### 🥳 {nombre_egresado}")
+                st.info(texto_whatsapp)
+                st.markdown(f'<a href="{link_wa}" target="_blank" style="text-decoration:none;"><button style="background-color:#25D366; color:white; border:none; padding:12px 20px; font-weight:bold; border-radius:8px; width:100%; cursor:pointer; font-size:15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.2s;">💬 Enviar por WhatsApp</button></a>', unsafe_allow_html=True)
+            st.markdown("---")
+            
+    if contador == 0:
+        st.info(f"🎈 No se encontraron cumpleañeros para la fecha seleccionada ({dia_buscado}).")
+
+except Exception as e:
+    st.error(f"Error general del sistema: {e}")
