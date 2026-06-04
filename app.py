@@ -14,9 +14,17 @@ st.set_page_config(page_title="Control de Cumpleaños UNAMAD", page_icon="🎓",
 st.title("🎓 Sistema de Cumpleaños UNAMAD")
 st.write("Control y envío de saludos para egresados desde la nube (PC o Celular).")
 
+# Inicializar el contador de envíos en la sesión por cada día si no existe
+if "registro_envios" not in st.session_state:
+    st.session_state.registro_envios = {}
+
 # Selector de fecha interactivo
 fecha_seleccionada = st.date_input("Selecciona la fecha a procesar:", datetime.now())
 dia_buscado = fecha_seleccionada.strftime("%d/%m")
+
+# Inicializar el contador específico para el día seleccionado
+if dia_buscado not in st.session_state.registro_envios:
+    st.session_state.registro_envios[dia_buscado] = 0
 
 # Enlace de tu base de datos en Google Sheets
 url_google_sheets = "https://docs.google.com/spreadsheets/d/1ScZqatCGsyBUAOQBTdwkTxfOoZNlRfuTD5bhy_iRCao/edit?usp=sharing"
@@ -177,6 +185,13 @@ try:
     
     jaguar_src = obtener_jaguar_base64()
     
+    # Mostrar KPI de control en la parte superior
+    col_kpi1, col_kpi2 = st.columns(2)
+    with col_kpi1:
+        st.metric(label="📅 Fecha Analizada", value=dia_buscado)
+    with col_kpi2:
+        st.metric(label="📨 Tarjetas Enviadas Hoy", value=f"{st.session_state.registro_envios[dia_buscado]} saludos")
+
     st.subheader(f"🎂 Cumpleañeros del día {dia_buscado}:")
     contador = 0
     
@@ -184,7 +199,7 @@ try:
         try:
             nombre_completo = str(fila[3]).strip()       
             carrera_profesional = str(fila[4]).strip()   
-            sexo_celda = str(fila[42]).strip().upper()  # <-- Columna AQ mapeada (Índice 42)
+            sexo_celda = str(fila[42]).strip().upper()  # Columna AQ (Índice 42)
             fecha_celda = str(fila[43]).strip()          
             celular_celda = str(fila[7]).strip().replace(".0", "").replace(" ", "")
         except:
@@ -239,7 +254,14 @@ try:
             with col2:
                 st.markdown(f"### 🥳 {nombre_egresado}")
                 st.info(texto_whatsapp)
-                st.markdown(f'<a href="{link_wa}" target="_blank" style="text-decoration:none;"><button style="background-color:#25D366; color:white; border:none; padding:14px 20px; font-weight:bold; border-radius:8px; width:100%; cursor:pointer; font-size:16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">💬 Enviar por WhatsApp</button></a>', unsafe_allow_html=True)
+                
+                # Botón con manejador nativo de Streamlit para aumentar el contador antes de abrir el enlace externo
+                if st.button(f"💬 Enviar por WhatsApp a {nombre_egresado}", key=f"btn_wa_{index}"):
+                    st.session_state.registro_envios[dia_buscado] += 1
+                    # Script JS abre la pestaña de WhatsApp inmediatamente al actualizar la interfaz
+                    st.components.v1.html(f"""<script>window.open("{link_wa}", "_blank");</script>""", height=0)
+                    st.rerun()
+
             st.markdown("---")
             
     if contador == 0:
