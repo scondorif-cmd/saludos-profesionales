@@ -4,6 +4,7 @@ import requests
 from datetime import datetime
 import urllib.parse
 import io
+import streamlit.components.v1 as components
 
 # Configuración de la plataforma
 st.set_page_config(page_title="Control de Cumpleaños UNAMAD", page_icon="🎓", layout="centered")
@@ -26,48 +27,115 @@ def descargar_datos():
     resp = requests.get(url_descarga)
     return pd.read_excel(io.BytesIO(resp.content), header=None, skiprows=1)
 
-def generar_tarjeta_html(nombre, carrera):
-    """Genera una tarjeta corporativa perfecta usando HTML/CSS libre de errores de codificación"""
+def generar_tarjeta_html(nombre, carrera, index):
+    """Genera la estructura de la tarjeta en HTML/CSS e incluye un botón de descarga real a PNG"""
     url_mascota = "https://docs.google.com/uc?export=download&id=10fW68y7oiTcr-VcPoEW1V-OQ4O3psxup"
     
     html_content = f"""
-    <div style="
-        background-color: #FFFFFF; 
-        border-radius: 12px; 
-        box-shadow: 0 10px 25px rgba(0,0,0,0.15); 
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-        overflow: hidden; 
-        max-width: 550px; 
-        margin: 10px auto; 
-        border: 1px solid #E2E8F0;
-    ">
-        <div style="background: linear-gradient(135deg, #1B365D 0%, #0B1D33 100%); padding: 30px 20px; text-align: center; color: white;">
-            <h2 style="margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 0.5px;">¡Feliz Cumpleaños, {nombre.upper()}!</h2>
-            <p style="margin: 8px 0 0 0; color: #E2E8F0; font-size: 13px; font-style: italic;">Egresado(a) de la Carrera Profesional de {carrera.upper()}</p>
-        </div>
-        
-        <div style="padding: 25px; position: relative;">
-            <p style="color: #1E293B; font-weight: bold; font-size: 16px; margin-top: 0;">Estimado(a) egresado(a),</p>
-            
-            <div style="display: flex; gap: 15px; align-items: flex-start;">
-                <div style="color: #334155; font-size: 14px; line-height: 1.6; text-align: justify; flex: 1;">
-                    Hoy es un día muy especial, y desde la <strong>Unidad de Seguimiento al Egresado y Bolsa de Trabajo</strong> queremos hacerte llegar nuestras más sinceras felicitaciones por tu cumpleaños.<br><br>
-                    Nos sentimos muy orgullosos de tus pasos y de tenerte como miembro activo de nuestra comunidad de graduados. Deseamos que pases un día extraordinario junto a tus seres queridos y que este nuevo año esté lleno de salud, felicidad y grandes éxitos profesionales.
-                </div>
-                <div style="width: 110px; text-align: center; flex-shrink: 0;">
-                    <img src="{url_mascota}" style="width: 100%; height: auto; border-radius: 8px;" alt="Mascota UNAMAD">
-                </div>
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+        <style>
+            body {{ margin: 0; padding: 10px; font-family: 'Segoe UI', Arial, sans-serif; background-color: #F8FAFC; }}
+            .tarjeta-contenedor {{
+                background-color: #FFFFFF; 
+                border-radius: 12px; 
+                box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
+                overflow: hidden; 
+                max-width: 500px; 
+                margin: 0 auto; 
+                border: 1px solid #E2E8F0;
+            }}
+            .banner-superior {{
+                background: linear-gradient(135deg, #1B365D 0%, #0B1D33 100%); 
+                padding: 25px 20px; 
+                text-align: center; 
+                color: white;
+            }}
+            .banner-superior h2 {{ margin: 0; font-size: 22px; font-weight: 700; }}
+            .banner-superior p {{ margin: 6px 0 0 0; color: #E2E8F0; font-size: 13px; font-style: italic; }}
+            .cuerpo {{ padding: 25px; }}
+            .cuerpo .saludo {{ color: #1E293B; font-weight: bold; font-size: 16px; margin-top: 0; }}
+            .contenido-flex {{ display: flex; gap: 15px; align-items: flex-start; }}
+            .texto-mensaje {{ color: #334155; font-size: 14px; line-height: 1.6; text-align: justify; flex: 1; }}
+            .jaguar-contenedor {{ width: 100px; text-align: center; flex-shrink: 0; }}
+            .jaguar-contenedor img {{ width: 100%; height: auto; border-radius: 8px; }}
+            .eslogan {{ color: #1B365D; text-align: center; margin: 25px 0 5px 0; font-size: 18px; font-weight: 700; }}
+            .pie-pagina {{
+                background-color: #0B1D33; 
+                padding: 15px 20px; 
+                text-align: center; 
+                color: white; 
+                font-size: 11px; 
+                line-height: 1.4;
+            }}
+            .btn-descargar {{
+                display: block;
+                width: 100%;
+                max-width: 500px;
+                margin: 15px auto 0 auto;
+                background: linear-gradient(135deg, #1B365D 0%, #0B1D33 100%);
+                color: white;
+                border: 1px solid #38BDF8;
+                padding: 12px;
+                font-weight: bold;
+                font-size: 15px;
+                border-radius: 8px;
+                cursor: pointer;
+                text-align: center;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+                transition: transform 0.2s;
+            }}
+            .btn-descargar:hover {{ transform: translateY(-2px); background: #1B365D; }}
+        </style>
+    </head>
+    <body>
+
+        <div id="tarjeta-{index}" class="tarjeta-contenedor">
+            <div class="banner-superior">
+                <h2>¡Feliz Cumpleaños, {nombre.upper()}!</h2>
+                <p>Egresado(a) de la Carrera Profesional de {carrera.upper()}</p>
             </div>
             
-            <h3 style="color: #1B365D; text-align: center; margin: 25px 0 5px 0; font-size: 18px; font-weight: 700;">¡Que disfrutes mucho de tu día!</h3>
+            <div class="cuerpo">
+                <p class="saludo">Estimado(a) egresado(a),</p>
+                <div class="contenido-flex">
+                    <div class="texto-mensaje">
+                        Hoy es un día muy especial, y desde la <strong>Unidad de Seguimiento al Egresado y Bolsa de Trabajo</strong> queremos hacerte llegar nuestras más sinceras felicitaciones por tu cumpleaños.<br><br>
+                        Nos sentimos muy orgullosos de tus pasos y de tenerte como miembro activo de nuestra comunidad de graduados. Deseamos que pases un día extraordinario junto a tus seres queridos y que este nuevo año esté lleno de salud, felicidad y grandes éxitos profesionales.
+                    </div>
+                    <div class="jaguar-contenedor">
+                        <img src="{url_mascota}" crossorigin="anonymous" alt="Mascota UNAMAD">
+                    </div>
+                </div>
+                <div class="eslogan">¡Que disfrutes mucho de tu día!</div>
+            </div>
+            
+            <div class="pie-pagina">
+                <span style="color: #38BDF8; font-weight: bold; letter-spacing: 1px;">ATENTAMENTE,</span><br>
+                <span style="color: #FFFFFF; font-weight: 600;">Unidad de Seguimiento al Egresado y Bolsa de Trabajo - DAA</span><br>
+                <span style="color: #94A3B8;">Universidad Nacional Amazónica de Madre de Dios</span>
+            </div>
         </div>
-        
-        <div style="background-color: #0B1D33; padding: 15px 20px; text-align: center; color: white; font-size: 11px; line-height: 1.4;">
-            <span style="color: #38BDF8; font-weight: bold; letter-spacing: 1px;">ATENTAMENTE,</span><br>
-            <span style="color: #FFFFFF; font-weight: 600;">Unidad de Seguimiento al Egresado y Bolsa de Trabajo - DAA</span><br>
-            <span style="color: #94A3B8;">Universidad Nacional Amazónica de Madre de Dios</span>
-        </div>
-    </div>
+
+        <button class="btn-descargar" onclick="bajarTarjeta()">💾 Descargar Tarjeta PNG</button>
+
+        <script>
+            function bajarTarjeta() {{
+                const elemento = document.getElementById('tarjeta-{index}');
+                // html2canvas toma una foto exacta de lo que ve el navegador
+                html2canvas(elemento, {{ useCORS: true, scale: 2 }}).then(canvas => {{
+                    const link = document.createElement('a');
+                    link.download = 'Tarjeta_{nombre.replace(" ", "_")}.png';
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                }});
+            }}
+        </script>
+    </body>
+    </html>
     """
     return html_content
 
@@ -112,18 +180,16 @@ try:
                 
             link_wa = f"https://api.whatsapp.com/send?phone={num_limpio}&text={texto_codificado}"
             
-            # Despliegue en columnas de Streamlit
             col1, col2 = st.columns([1.3, 1.0])
             with col1:
-                # Renderizar la tarjeta impecable usando el motor HTML seguro de Streamlit
-                tarjeta_html = generar_tarjeta_html(nombre_egresado, carrera_profesional)
-                st.markdown(tarjeta_html, unsafe_allow_html=True)
-                st.caption(f"Visualización de Tarjeta Oficial para {nombre_egresado}")
+                # SOLUCIÓN CRUCIAL: Se inyecta usando el componente iframe nativo de Streamlit
+                tarjeta_codigo = generar_tarjeta_html(nombre_egresado, carrera_profesional, index)
+                components.html(tarjeta_codigo, height=650, scrolling=False)
                 
             with col2:
                 st.markdown(f"### 🥳 {nombre_egresado}")
                 st.info(texto_whatsapp)
-                st.markdown(f'<a href="{link_wa}" target="_blank" style="text-decoration:none;"><button style="background-color:#25D366; color:white; border:none; padding:14px 20px; font-weight:bold; border-radius:8px; width:100%; cursor:pointer; font-size:16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.3s;">💬 Enviar Saludo y Tarjeta por WhatsApp</button></a>', unsafe_allow_html=True)
+                st.markdown(f'<a href="{link_wa}" target="_blank" style="text-decoration:none;"><button style="background-color:#25D366; color:white; border:none; padding:14px 20px; font-weight:bold; border-radius:8px; width:100%; cursor:pointer; font-size:16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.3s;">💬 Enviar por WhatsApp</button></a>', unsafe_allow_html=True)
             st.markdown("---")
             
     if contador == 0:
