@@ -68,53 +68,23 @@ try:
                 
             link_wa = f"https://api.whatsapp.com/send?phone={num_limpio}&text={texto_codificado}" if num_limpio and num_limpio != "nan" else f"https://api.whatsapp.com/send?text={texto_codificado}"
             
-            # --- DISEÑO DIGITAL EN HTML (Con enlace directo a tu imagen de Drive) ---
+            # --- CARD MAQUETADA CON COLOR IGUALADO A LA IMAGEN (Fondo #F0F4F8) ---
             html_tarjeta = f"""
-            <div style="background-color: #F8FAFC; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 100%; max-width: 600px; font-family: 'Segoe UI', Arial, sans-serif; overflow: hidden; margin: 15px auto; border: 1px solid #E2E8F0;">
-                <div style="background-color: #1B365D; padding: 30px 20px; text-align: center;">
-                    <h2 style="color: #FFFFFF; margin: 0; font-size: 24px; font-weight: 700; line-height: 1.3;">¡Feliz Cumpleaños, {nombre_egresado}! 🎂🎉</h2>
-                    <p style="color: #E2E8F0; margin: 10px 0 0 0; font-size: 14px; font-weight: 400;">Egresado(a) de la Carrera Profesional de {carrera_profesional.upper()}</p>
+            <div style="background-color: #F0F4F8; border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); width: 100%; max-width: 600px; font-family: 'Segoe UI', Arial, sans-serif; overflow: hidden; margin: 10px auto; border: 1px solid #D1D5DB;">
+                <div style="background-color: #1B365D; padding: 25px 20px; text-align: center;">
+                    <h2 style="color: #FFFFFF; margin: 0; font-size: 25px; font-weight: 700; line-height: 1.3;">¡Feliz Cumpleaños, {nombre_egresado}! 🎂🎉</h2>
+                    <p style="color: #E2E8F0; margin: 8px 0 0 0; font-size: 14px; font-weight: 400;">Egresado(a) de la Carrera Profesional de {carrera_profesional.upper()}</p>
                 </div>
                 
-                <div style="padding: 25px 25px; background-color: #FFFFFF;">
-                    <div style="float: right; margin-left: 15px; margin-bottom: 10px; width: 130px;">
-                        <img src="https://lh3.googleusercontent.com/d/10fW68y7oiTcr-VcPoEW1V-OQ4O3psxup" style="width: 100%; height: auto; display: block;" alt="Mascota UNAMAD">
+                <div style="padding: 30px 25px; background-color: #F0F4F8; position: relative;">
+                    <div style="float: right; margin-left: 15px; margin-bottom: 10px; width: 135px;">
+                        <img src="https://lh3.googleusercontent.com/d/10fW68y7oiTcr-VcPoEW1V-OQ4O3psxup" style="width: 100%; height: auto; display: block;" alt="Mascota">
                     </div>
                     
-                    <p style="color: #1E293B; font-weight: 700; font-size: 16px; margin: 0 0 12px 0;">Estimado(a) egresado(a),</p>
+                    <p style="color: #1E293B; font-weight: 700; font-size: 16px; margin: 0 0 14px 0;">Estimado(a) egresado(a),</p>
                     
-                    <p style="color: #334155; font-size: 14.5px; line-height: 1.6; margin: 0 0 14px 0; text-align: justify;">
+                    <p style="color: #334155; font-size: 15px; line-height: 1.6; margin: 0 0 14px 0; text-align: justify;">
                         Hoy es un día muy especial, y desde la <strong>Unidad de Seguimiento al Egresado y Bolsa de Trabajo</strong> queremos hacerte llegar nuestras más sinceras felicitaciones por tu cumpleaños.
                     </p>
                     
-                    <p style="color: #334155; font-size: 14.5px; line-height: 1.6; margin: 0 0 15px 0; text-align: justify;">
-                        Nos sentimos muy orgullosos de tus pasos y de tenerte como miembro activo de nuestra comunidad de graduados. Deseamos que pases un día extraordinario junto a tus seres queridos y que este nuevo año esté lleno de salud, felicidad y grandes éxitos profesionales.
-                    </p>
-                    
-                    <div style="clear: both;"></div>
-                    
-                    <h4 style="color: #1B365D; text-align: center; font-size: 18px; font-weight: 700; margin: 20px 0 5px 0;">¡Que disfrutes mucho de tu día!</h4>
-                </div>
-                
-                <div style="background-color: #0B1D33; padding: 20px; text-align: center; color: #FFFFFF; font-size: 12px; line-height: 1.5;">
-                    <span style="color: #38BDF8; font-weight: 700; letter-spacing: 1px; display: block; margin-bottom: 5px;">ATENTAMENTE,</span>
-                    <strong style="display: block; font-size: 13px; color: #FFFFFF;">Unidad de Seguimiento al Egresado y Bolsa de Trabajo - DAA</strong>
-                    <span style="color: #CBD5E1; display: block; margin-top: 3px;">Universidad Nacional Amazónica de Madre de Dios</span>
-                </div>
-            </div>
-            """
-            
-            with st.container():
-                # Renderizado limpio
-                st.components.v1.html(html_tarjeta, height=570, scrolling=False)
-                st.caption(f"💡 *Sugerencia: Haz una captura a la tarjeta de {nombre_egresado} para guardarla en alta definición.*")
-                
-                # Botón de WhatsApp estilizado
-                st.markdown(f'<a href="{link_wa}" target="_blank" style="text-decoration:none;"><button style="background-color:#25D366; color:white; border:none; padding:12px 20px; font-weight:bold; border-radius:8px; width:100%; max-width:600px; margin:10px auto; display:block; cursor:pointer; font-size:16px;">💬 Enviar por WhatsApp a {nombre_egresado}</button></a>', unsafe_allow_html=True)
-            st.markdown("---")
-            
-    if contador == 0:
-        st.info(f"🎈 No se encontraron cumpleañeros para la fecha seleccionada ({dia_buscado}).")
-
-except Exception as e:
-    st.error(f"Error general del sistema: {e}")
+                    <p style="color: #334155; font-size: 15
