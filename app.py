@@ -99,7 +99,7 @@ def obtener_jaguar_base64():
     else:
         return "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='110' height='110'><rect width='110' height='110' fill='%23cccccc'/></svg>"
 
-def generar_tarjeta_html(nombre, carrera, index, jaguar_src, titulo_egresado, saludo_inicial):
+def generar_tarjeta_html(nombre, carrera, index, jaguar_src, titulo_egresado, saludo_inicial, degradado_color):
     html_content = f"""
     <!DOCTYPE html>
     <html lang="es">
@@ -118,13 +118,13 @@ def generar_tarjeta_html(nombre, carrera, index, jaguar_src, titulo_egresado, sa
                 border: 1px solid #E2E8F0;
             }}
             .banner-superior {{
-                background: linear-gradient(135deg, #1B365D 0%, #0B1D33 100%); 
+                background: {degradado_color}; 
                 padding: 24px 16px; 
                 text-align: center; 
                 color: white;
             }}
             .banner-superior h2 {{ margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }}
-            .banner-superior p {{ margin: 6px 0 0 0; color: #93C5FD; font-size: 11.5px; font-weight: 500; text-transform: uppercase; }}
+            .banner-superior p {{ margin: 6px 0 0 0; color: #E0F2FE; font-size: 11.5px; font-weight: 500; text-transform: uppercase; }}
             .cuerpo {{ padding: 20px; }}
             .saludo {{ color: #1E293B; font-weight: 700; font-size: 15px; margin-top: 0; margin-bottom: 12px; }}
             
@@ -290,19 +290,24 @@ try:
             # Identificador único para el control estricto del egresado
             id_unico_egresado = f"{nombre_egresado}_{dia_buscado}"
 
-            # Lógica adaptada según el género de la columna AQ
+            # Lógica adaptada según el género de la columna AQ para Textos y Colores Corporativos
             if sexo_celda == "M" or sexo_celda == "MASCULINO":
                 titulo_egresado = "Egresado"
                 saludo_inicial = "Estimado egresado"
                 art_saludo = "nuestro profesional"
+                # Degradado institucional azul ejecutivo
+                degradado_color = "linear-gradient(135deg, #1B365D 0%, #2A52BE 100%)"
             elif sexo_celda == "F" or sexo_celda == "FEMENINO":
                 titulo_egresado = "Egresada"
                 saludo_inicial = "Estimada egresada"
                 art_saludo = "nuestra profesional"
+                # Degradado institucional púrpura guinda (Fiel a la imagen original)
+                degradado_color = "linear-gradient(135deg, #7D1D7F 0%, #521454 100%)"
             else:
                 titulo_egresado = "Egresado(a)"
                 saludo_inicial = "Estimado(a) egresado(a)"
                 art_saludo = "nuestro(a) profesional"
+                degradado_color = "linear-gradient(135deg, #1B365D 0%, #0B1D33 100%)"
 
             texto_whatsapp = f"¡HOY CELEBRAMOS SU CUMPLEAÑOS! 🎂🎉\n\nEnviamos un afectuoso saludo a {art_saludo} que festeja su onomástico hoy:\n\n*{nombre_egresado}*\n🎓 {titulo_egresado} de {carrera_profesional}\n\n¡Muchas felicidades y que tenga un excelente día! ✨🎈"
             texto_codificado = urllib.parse.quote(texto_whatsapp)
@@ -318,7 +323,7 @@ try:
             
             col1, col2 = st.columns([1.2, 1.0])
             with col1:
-                tarjeta_html = generar_tarjeta_html(nombre_egresado, carrera_profesional, index, jaguar_src, titulo_egresado, saludo_inicial)
+                tarjeta_html = generar_tarjeta_html(nombre_egresado, carrera_profesional, index, jaguar_src, titulo_egresado, saludo_inicial, degradado_color)
                 components.html(tarjeta_html, height=660, scrolling=False)
                 
             with col2:
