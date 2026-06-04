@@ -30,13 +30,10 @@ def descargar_datos():
 
 def conseguir_fuente_servidor(es_bold, tamano):
     """Busca de manera exhaustiva fuentes TrueType escalables en Linux Streamlit"""
-    # Lista de rutas típicas de fuentes en servidores Debian/Ubuntu (donde corre Streamlit)
     rutas_fuentes = [
-        # 1. Rutas absolutas estándar
         "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf" if es_bold else "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" if es_bold else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
         "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf" if es_bold else "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
-        # 2. Alternativas por si acaso
         "/usr/share/fonts/X11/TTF/luxisb.ttf" if es_bold else "/usr/share/fonts/X11/TTF/luxisr.ttf"
     ]
     
@@ -47,11 +44,9 @@ def conseguir_fuente_servidor(es_bold, tamano):
             except:
                 continue
                 
-    # Si todo lo anterior falla en el servidor, intentamos cargar la de DejaVu que suele responder directo
     try:
         return ImageFont.truetype("DejaVuSans-Bold.ttf" if es_bold else "DejaVuSans.ttf", tamano)
     except:
-        # Último recurso antes del colapso: usar la básica pero escalada si la versión de Pillow lo permite
         try:
             return ImageFont.load_default(size=tamano)
         except:
@@ -63,11 +58,11 @@ def crear_tarjeta_perfecta(nombre, carrera):
     imagen = Image.new("RGB", (ancho, alto), "#FFFFFF")
     draw = ImageDraw.Draw(imagen)
     
-    # === TAMAÑOS MÁXIMOS RECALCULADOS ===
-    f_titulo = conseguir_fuente_servidor(True, 34)         # Nombre arriba
+    # === FUENTES DE ALTA RESOLUCIÓN ===
+    f_titulo = conseguir_fuente_servidor(True, 32)         # Nombre arriba
     f_subtitulo = conseguir_fuente_servidor(False, 15)     # Carrera profesional
-    f_cuerpo_bold = conseguir_fuente_servidor(True, 24)    # "Estimado(a) egresado(a),"
-    f_cuerpo = conseguir_fuente_servidor(False, 20)       # Texto de felicitación
+    f_cuerpo_bold = conseguir_fuente_servidor(True, 23)    # "Estimado(a) egresado(a),"
+    f_cuerpo = conseguir_fuente_servidor(False, 19)       # Texto de felicitación
     f_eslogan = conseguir_fuente_servidor(True, 26)        # ¡Que disfrutes mucho de tu día!
     f_pie_tit = conseguir_fuente_servidor(True, 14)        # ATENTAMENTE,
     f_pie_sub = conseguir_fuente_servidor(True, 16)        # Unidad de Seguimiento...
@@ -77,51 +72,53 @@ def crear_tarjeta_perfecta(nombre, carrera):
     draw.rectangle([0, 0, ancho, 155], fill="#1B365D")
     draw.text((ancho // 2, 55), f"¡Feliz Cumpleaños, {nombre.upper()}!", fill="#FFFFFF", font=f_titulo, anchor="mm")
     
-    # Manejo de texto largo en carreras para que no se desborde
     texto_carrera = f"Egresado(a) de la Carrera Profesional de {carrera.upper()}"
     if len(texto_carrera) > 68:
         draw.text((ancho // 2, 110), texto_carrera[:65] + "...", fill="#E2E8F0", font=f_subtitulo, anchor="mm")
     else:
         draw.text((ancho // 2, 110), texto_carrera, fill="#E2E8F0", font=f_subtitulo, anchor="mm")
     
-    # 2. Cuerpo del Mensaje con Márgenes Amplios
+    # 2. Cuerpo del Mensaje con Márgenes Controlados (Para no chocar con la Mascota)
     draw.text((50, 205), "Estimado(a) egresado(a),", fill="#1E293B", font=f_cuerpo_bold)
     
+    # Renglones acortados estratégicamente para dejar libre la zona derecha (píxeles 520 a 750)
     lineas = [
-        "Hoy es un día muy especial, y desde la Unidad de",
-        "Seguimiento al Egresado y Bolsa de Trabajo queremos",
-        "hacerte llegar nuestras más sinceras felicitaciones por tu",
-        "cumpleaños.",
+        "Hoy es un día muy especial, y desde la",
+        "Unidad de Seguimiento al Egresado y",
+        "Bolsa de Trabajo queremos hacerte llegar",
+        "nuestras más sinceras felicitaciones por",
+        "tu cumpleaños.",
         "",
-        "Nos sentimos muy orgullosos de tus pasos y de tenerte como",
-        "miembro activo de nuestra comunidad de graduados. Deseamos",
-        "que pases un día extraordinario junto a tus seres queridos y que",
-        "este nuevo año esté lleno de salud, felicidad y grandes éxitos",
-        "profesionales."
+        "Nos sentimos muy orgullosos de tus pasos y",
+        "de tenerte como miembro activo de nuestra",
+        "comunidad de graduados. Deseamos que",
+        "pases un día extraordinario junto a tus seres",
+        "queridos y que este nuevo año esté lleno de",
+        "salud, felicidad y grandes éxitos profesionales."
     ]
     
-    y_linea = 260
+    y_linea = 255
     for linea in lineas:
         draw.text((50, y_linea), linea, fill="#334155", font=f_cuerpo)
-        y_linea += 38  # Separación entre renglones
+        y_linea += 34  # Ajuste fino de interlineado
         
     # Mensaje de Cierre destacado abajo
-    draw.text((ancho // 2, 675), "¡Que disfrutes mucho de tu día!", fill="#1B365D", font=f_eslogan, anchor="mm")
+    draw.text((ancho // 2, 710), "¡Que disfrutes mucho de tu día!", fill="#1B365D", font=f_eslogan, anchor="mm")
     
     # 3. Bloque Inferior del Pie de Página (Azul Oscuro)
-    draw.rectangle([0, alto - 140, ancho, alto], fill="#0B1D33")
-    draw.text((ancho // 2, alto - 105), "ATENTAMENTE,", fill="#38BDF8", font=f_pie_tit, anchor="mm")
-    draw.text((ancho // 2, alto - 75), "Unidad de Seguimiento al Egresado y Bolsa de Trabajo - DAA", fill="#FFFFFF", font=f_pie_sub, anchor="mm")
-    draw.text((ancho // 2, alto - 48), "Universidad Nacional Amazónica de Madre de Dios", fill="#94A3B8", font=f_pie_univ, anchor="mm")
+    draw.rectangle([0, alto - 115, ancho, alto], fill="#0B1D33")
+    draw.text((ancho // 2, alto - 85), "ATENTAMENTE,", fill="#38BDF8", font=f_pie_tit, anchor="mm")
+    draw.text((ancho // 2, alto - 60), "Unidad de Seguimiento al Egresado y Bolsa de Trabajo - DAA", fill="#FFFFFF", font=f_pie_sub, anchor="mm")
+    draw.text((ancho // 2, alto - 35), "Universidad Nacional Amazónica de Madre de Dios", fill="#94A3B8", font=f_pie_univ, anchor="mm")
     
-    # 4. Integración de la Mascota Jaguar (Desde tu Google Drive)
+    # 4. Integración Limpia de la Mascota Jaguar (Alineada perfectamente a la derecha)
     try:
         id_drive = "10fW68y7oiTcr-VcPoEW1V-OQ4O3psxup"
         url_mascota = f"https://docs.google.com/uc?export=download&id={id_drive}"
         res_img = requests.get(url_mascota, timeout=10)
         img_mascota = Image.open(io.BytesIO(res_img.content)).convert("RGBA")
-        img_mascota = img_mascota.resize((155, 180)) 
-        imagen.paste(img_mascota, (540, 205), img_mascota)
+        img_mascota = img_mascota.resize((190, 220)) # Tamaño óptimo institucional
+        imagen.paste(img_mascota, (525, 230), img_mascota) # Posición segura
     except:
         pass
         
