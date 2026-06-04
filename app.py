@@ -87,4 +87,44 @@ try:
                         Hoy es un día muy especial, y desde la <strong>Unidad de Seguimiento al Egresado y Bolsa de Trabajo</strong> queremos hacerte llegar nuestras más sinceras felicitaciones por tu cumpleaños.
                     </p>
                     
-                    <p style="color: #334155; font-size: 15
+                    <p style="color: #334155; font-size: 15px; line-height: 1.6; margin: 0 0 15px 0; text-align: justify;">
+                        Nos sentimos muy orgullosos de tus pasos y de tenerte como miembro activo de nuestra comunidad de graduados. Deseamos que pases un día extraordinario junto a tus seres queridos y que este nuevo año esté lleno de salud, felicidad y grandes éxitos profesionales.
+                    </p>
+                    
+                    <div style="clear: both;"></div>
+                    
+                    <h4 style="color: #1B365D; text-align: center; font-size: 18px; font-weight: 700; margin: 25px 0 5px 0;">¡Que disfrutes mucho de tu día!</h4>
+                </div>
+                
+                <div style="background-color: #0B1D33; padding: 20px; text-align: center; color: #FFFFFF; font-size: 12px; line-height: 1.5;">
+                    <span style="color: #38BDF8; font-weight: 700; letter-spacing: 1px; display: block; margin-bottom: 5px;">ATENTAMENTE,</span>
+                    <strong style="display: block; font-size: 13px; color: #FFFFFF;">Unidad de Seguimiento al Egresado y Bolsa de Trabajo - DAA</strong>
+                    <span style="color: #CBD5E1; display: block; margin-top: 3px;">Universidad Nacional Amazónica de Madre de Dios</span>
+                </div>
+            </div>
+            """
+            
+            with st.container():
+                col1, col2 = st.columns([1.3, 1.0])
+                with col1:
+                    # Desplegar tarjeta impecable
+                    st.components.v1.html(html_tarjeta, height=560, scrolling=False)
+                    
+                    # --- BOTÓN DE GUARDAR IMAGEN / ACCIÓN ---
+                    st.markdown('''
+                        <button onclick="window.print();" style="background-color:#6366F1; color:white; border:none; padding:10px 18px; font-weight:bold; border-radius:6px; width:100%; max-width:600px; margin-top:5px; cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center; gap:8px;">
+                            💾 Guardar / Capturar Tarjeta
+                        </button>
+                    ''', unsafe_allow_html=True)
+                    
+                with col2:
+                    st.markdown(f"### 🥳 {nombre_egresado}")
+                    st.info(texto_whatsapp)
+                    st.markdown(f'<a href="{link_wa}" target="_blank" style="text-decoration:none;"><button style="background-color:#25D366; color:white; border:none; padding:12px 20px; font-weight:bold; border-radius:8px; width:100%; cursor:pointer; font-size:15px;">💬 Enviar por WhatsApp</button></a>', unsafe_allow_html=True)
+            st.markdown("---")
+            
+    if contador == 0:
+        st.info(f"🎈 No se encontraron cumpleañeros para la fecha seleccionada ({dia_buscado}).")
+
+except Exception as e:
+    st.error(f"Error general del sistema: {e}")
