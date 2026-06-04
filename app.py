@@ -29,28 +29,45 @@ def descargar_datos():
     return pd.read_excel(io.BytesIO(resp.content), header=None, skiprows=1)
 
 def conseguir_fuente_servidor(es_bold, tamano):
-    """Detecta las fuentes del sistema Linux de Streamlit de forma infalible"""
-    rutas_linux = [
+    """Busca de manera exhaustiva fuentes TrueType escalables en Linux Streamlit"""
+    # Lista de rutas típicas de fuentes en servidores Debian/Ubuntu (donde corre Streamlit)
+    rutas_fuentes = [
+        # 1. Rutas absolutas estándar
         "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf" if es_bold else "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" if es_bold else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-        "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf" if es_bold else "/usr/share/fonts/truetype/freefont/FreeSans.ttf"
+        "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf" if es_bold else "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
+        # 2. Alternativas por si acaso
+        "/usr/share/fonts/X11/TTF/luxisb.ttf" if es_bold else "/usr/share/fonts/X11/TTF/luxisr.ttf"
     ]
-    for ruta in rutas_linux:
+    
+    for ruta in rutas_fuentes:
         if os.path.exists(ruta):
-            return ImageFont.truetype(ruta, tamano)
-    return ImageFont.load_default()
+            try:
+                return ImageFont.truetype(ruta, tamano)
+            except:
+                continue
+                
+    # Si todo lo anterior falla en el servidor, intentamos cargar la de DejaVu que suele responder directo
+    try:
+        return ImageFont.truetype("DejaVuSans-Bold.ttf" if es_bold else "DejaVuSans.ttf", tamano)
+    except:
+        # Último recurso antes del colapso: usar la básica pero escalada si la versión de Pillow lo permite
+        try:
+            return ImageFont.load_default(size=tamano)
+        except:
+            return ImageFont.load_default()
 
 def crear_tarjeta_perfecta(nombre, carrera):
-    # Dimensiones corporativas oficiales basadas en Tarjeta_SHANIRA.png (750 x 850)
+    # Dimensiones exactas (750 x 850)
     ancho, alto = 750, 850
     imagen = Image.new("RGB", (ancho, alto), "#FFFFFF")
     draw = ImageDraw.Draw(imagen)
     
-    # === ESCALADO MAXIMIZADO DE FUENTES (Grosores idénticos a Tarjeta_SHANIRA.png) ===
-    f_titulo = conseguir_fuente_servidor(True, 34)         # Nombre en el Banner
-    f_subtitulo = conseguir_fuente_servidor(False, 15)     # Carrera Profesional
+    # === TAMAÑOS MÁXIMOS RECALCULADOS ===
+    f_titulo = conseguir_fuente_servidor(True, 34)         # Nombre arriba
+    f_subtitulo = conseguir_fuente_servidor(False, 15)     # Carrera profesional
     f_cuerpo_bold = conseguir_fuente_servidor(True, 24)    # "Estimado(a) egresado(a),"
-    f_cuerpo = conseguir_fuente_servidor(False, 20)       # Bloque de felicitación
+    f_cuerpo = conseguir_fuente_servidor(False, 20)       # Texto de felicitación
     f_eslogan = conseguir_fuente_servidor(True, 26)        # ¡Que disfrutes mucho de tu día!
     f_pie_tit = conseguir_fuente_servidor(True, 14)        # ATENTAMENTE,
     f_pie_sub = conseguir_fuente_servidor(True, 16)        # Unidad de Seguimiento...
@@ -59,9 +76,15 @@ def crear_tarjeta_perfecta(nombre, carrera):
     # 1. Banner Superior Azul Institucional
     draw.rectangle([0, 0, ancho, 155], fill="#1B365D")
     draw.text((ancho // 2, 55), f"¡Feliz Cumpleaños, {nombre.upper()}!", fill="#FFFFFF", font=f_titulo, anchor="mm")
-    draw.text((ancho // 2, 110), f"Egresado(a) de la Carrera Profesional de {carrera.upper()}", fill="#E2E8F0", font=f_subtitulo, anchor="mm")
     
-    # 2. Cuerpo del Mensaje (Con márgenes amplios y saltos limpios)
+    # Manejo de texto largo en carreras para que no se desborde
+    texto_carrera = f"Egresado(a) de la Carrera Profesional de {carrera.upper()}"
+    if len(texto_carrera) > 68:
+        draw.text((ancho // 2, 110), texto_carrera[:65] + "...", fill="#E2E8F0", font=f_subtitulo, anchor="mm")
+    else:
+        draw.text((ancho // 2, 110), texto_carrera, fill="#E2E8F0", font=f_subtitulo, anchor="mm")
+    
+    # 2. Cuerpo del Mensaje con Márgenes Amplios
     draw.text((50, 205), "Estimado(a) egresado(a),", fill="#1E293B", font=f_cuerpo_bold)
     
     lineas = [
@@ -77,12 +100,12 @@ def crear_tarjeta_perfecta(nombre, carrera):
         "profesionales."
     ]
     
-    y_linea = 255
+    y_linea = 260
     for linea in lineas:
         draw.text((50, y_linea), linea, fill="#334155", font=f_cuerpo)
-        y_linea += 38  # Interlineado óptimo y espacioso
+        y_linea += 38  # Separación entre renglones
         
-    # Deseos finales centrado
+    # Mensaje de Cierre destacado abajo
     draw.text((ancho // 2, 675), "¡Que disfrutes mucho de tu día!", fill="#1B365D", font=f_eslogan, anchor="mm")
     
     # 3. Bloque Inferior del Pie de Página (Azul Oscuro)
