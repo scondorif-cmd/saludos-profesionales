@@ -14,27 +14,27 @@ st.set_page_config(page_title="Control de Cumpleaños UNAMAD", page_icon="🎓",
 # Estilos CSS globales inyectados para refinar la UI de Streamlit
 st.markdown("""
     <style>
-    .main .block-container { padding-top: 2rem; padding-bottom: 2rem; }
-    h1 { color: #1B365D; font-weight: 800; font-size: 2.2rem !important; margin-bottom: 0.2rem; }
-    .subtitulo-app { color: #475569; font-size: 1.05rem; margin-bottom: 2rem; }
+    .main .block-container { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+    h1 { color: #1B365D; font-weight: 800; font-size: 2.2rem !important; margin-bottom: 0.1rem; }
+    .subtitulo-app { color: #475569; font-size: 1.05rem; margin-bottom: 1.5rem; }
     
     /* Panel de Métricas Estilizado */
     .panel-metricas {
         background-color: #F8FAFC;
         border: 1px solid #E2E8F0;
         border-radius: 12px;
-        padding: 1.25rem;
-        margin-bottom: 2rem;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
     
-    /* Caja contenedora para cada Egresado */
+    /* Caja contenedora para cada Egresado - REDUCIDO EL MARGEN INFERIOR */
     .bloque-egresado {
         background-color: #FFFFFF;
         border: 1px solid #E2E8F0;
         border-radius: 16px;
-        padding: 1.5rem;
-        margin-bottom: 2rem;
+        padding: 1.25rem;
+        margin-bottom: 1rem; /* Espacio reducido entre bloques horizontales */
         box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
     }
     
@@ -360,10 +360,11 @@ try:
             # Apertura del bloque estilizado individual
             st.markdown('<div class="bloque-egresado">', unsafe_allow_html=True)
             
-            col1, col2 = st.columns([1.2, 1.0])
+            # Configuración de columnas con brecha estrecha
+            col1, col2 = st.columns([1.2, 1.0], gap="small")
             with col1:
                 tarjeta_html = generar_tarjeta_html(nombre_egresado, carrera_profesional, index, jaguar_src, titulo_egresado, saludo_inicial, colores_render)
-                components.html(tarjeta_html, height=600, scrolling=False)
+                components.html(tarjeta_html, height=590, scrolling=False)
                 
             with col2:
                 st.markdown(f"<h3 style='margin-top:0; color:#1E293B;'>🥳 {nombre_egresado}</h3>", unsafe_allow_html=True)
@@ -375,13 +376,10 @@ try:
                 if ya_enviado:
                     st.markdown(f'<a class="btn-deshabilitado">✅ Saludo registrado para {nombre_egresado}</a>', unsafe_allow_html=True)
                 else:
-                    # Formulario fantasma para simular la persistencia y sumar al contador al hacer clic
                     with st.form(key=f"form_{id_unico_egresado}", border=False):
-                        # Link HTML nativo seguro (El navegador NUNCA bloqueará este método de apertura de enlaces)
                         st.markdown(f'<a href="{link_wa}" target="_blank" class="btn-whatsapp-nativo">💬 Enviar por WhatsApp</a>', unsafe_allow_html=True)
                         
-                        # Botón secundario discreto para marcar manualmente que ya se envió
-                        st.markdown("<div style='margin-top: 8px;'></div>", unsafe_allow_html=True)
+                        st.markdown("<div style='margin-top: 6px;'></div>", unsafe_allow_html=True)
                         if st.form_submit_button("📌 Marcar como enviado e incrementar contador"):
                             st.session_state.egresados_saludados.add(id_unico_egresado)
                             st.session_state.registro_envios[dia_buscado] += 1
