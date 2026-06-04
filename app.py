@@ -4,7 +4,6 @@ import requests
 from datetime import datetime
 import urllib.parse
 import io
-import os
 from PIL import Image, ImageDraw, ImageFont
 
 # Configuración de la plataforma
@@ -28,28 +27,13 @@ def descargar_datos():
     resp = requests.get(url_descarga)
     return pd.read_excel(io.BytesIO(resp.content), header=None, skiprows=1)
 
-def conseguir_fuente_servidor(es_bold, tamano):
-    """Busca las fuentes nativas de Linux en el servidor para garantizar un grosor Arial idéntico"""
-    rutas_bold = [
-        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        "sans-serif"
-    ]
-    rutas_regular = [
-        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-        "sans-serif"
-    ]
-    
-    rutas_a_probar = rutas_bold if es_bold else rutas_regular
-    for ruta in rutas_a_probar:
-        if os.path.exists(ruta):
-            return ImageFont.truetype(ruta, tamano)
-            
-    # Si falla, intenta cargar por nombre directo en el sistema
+def cargar_fuente_google(url, tamano):
+    """Descarga fuentes profesionales con soporte completo de tildes y eñes desde Google Fonts"""
     try:
-        return ImageFont.truetype("LiberationSans-Bold.ttf" if es_bold else "LiberationSans-Regular.ttf", tamano)
-    except:
+        respuesta = requests.get(url, timeout=10)
+        return ImageFont.truetype(io.BytesIO(respuesta.content), tamano)
+    except Exception as e:
+        st.warning(f"No se pudo cargar la fuente remota, usando respaldo: {e}")
         return ImageFont.load_default()
 
 def crear_tarjeta_perfecta(nombre, carrera):
@@ -58,24 +42,29 @@ def crear_tarjeta_perfecta(nombre, carrera):
     imagen = Image.new("RGB", (ancho, alto), "#FFFFFF")
     draw = ImageDraw.Draw(imagen)
     
-    # === TAMAÑOS MÁXIMOS Y ULTRA GRUESOS (Alineado con Tarjeta_SHANIRA.png) ===
-    f_titulo = conseguir_fuente_servidor(True, 38)        # Título arriba gigante
-    f_subtitulo = conseguir_fuente_servidor(False, 16)    # Carrera profesional
-    f_cuerpo_bold = conseguir_fuente_servidor(True, 26)   # "Estimado(a) egresado(a),"
-    f_cuerpo = conseguir_fuente_servidor(False, 23)      # Texto completo del cuerpo
-    f_eslogan = conseguir_fuente_servidor(True, 30)       # "¡Que disfrutes mucho de tu día!"
-    f_pie_tit = conseguir_fuente_servidor(True, 15)       # "ATENTAMENTE,"
-    f_pie_sub = conseguir_fuente_servidor(True, 18)       # Unidad de seguimiento
-    f_pie_univ = conseguir_fuente_servidor(False, 15)     # Universidad
+    # URL de fuentes de Google de alta calidad con soporte total para español (Tildes y Ñ)
+    url_bold = "https://github.com/google/fonts/raw/main/ofl/montserrat/Montserrat-Bold.ttf"
+    url_regular = "https://github.com/google/fonts/raw/main/ofl/montserrat/Montserrat-Regular.ttf"
+    
+    # === TAMAÑOS MAXIMIZADOS PARA LLENAR EL LIENZO (Idéntico a Tarjeta_SHANIRA.png) ===
+    f_titulo = cargar_fuente_google(url_bold, 34)         # ¡Feliz Cumpleaños!
+    f_subtitulo = cargar_fuente_google(url_regular, 15)   # Carrera profesional
+    f_cuerpo_bold = cargar_fuente_google(url_bold, 24)    # "Estimado(a) egresado(a),"
+    f_cuerpo = cargar_fuente_google(url_regular, 20)       # Bloque de texto principal
+    f_eslogan = cargar_fuente_google(url_bold, 26)        # ¡Que disfrutes mucho de tu día!
+    f_pie_tit = cargar_fuente_google(url_bold, 14)        # ATENTAMENTE,
+    f_pie_sub = cargar_fuente_google(url_bold, 15)        # Unidad de Seguimiento...
+    f_pie_univ = cargar_fuente_google(url_regular, 13)    # Universidad Nacional...
 
     # 1. Encabezado Azul Institucional
     draw.rectangle([0, 0, ancho, 155], fill="#1B365D")
-    draw.text((ancho // 2, 50), f"¡Feliz Cumpleaños, {nombre.upper()}!", fill="#FFFFFF", font=f_titulo, anchor="mm")
-    draw.text((ancho // 2, 105), f"Egresado(a) de la Carrera Profesional de {carrera.upper()}", fill="#E2E8F0", font=f_subtitulo, anchor="mm")
+    draw.text((ancho // 2, 55), f"¡Feliz Cumpleaños, {nombre.upper()}!", fill="#FFFFFF", font=f_titulo, anchor="mm")
+    draw.text((ancho // 2, 108), f"Egresado(a) de la Carrera Profesional de {carrera.upper()}", fill="#E2E8F0", font=f_subtitulo, anchor="mm")
     
-    # 2. Bloque de Texto del Cuerpo (Letras gigantes con interlineado perfecto de 42px)
-    draw.text((45, 210), "Estimado(a) egresado(a),", fill="#1E293B", font=f_cuerpo_bold)
+    # 2. Bloque de Texto del Cuerpo (Letras grandes, bien espaciadas y adaptadas a la mascota)
+    draw.text((50, 205), "Estimado(a) egresado(a),", fill="#1E293B", font=f_cuerpo_bold)
     
+    # Alineación manual exacta para cubrir todo el ancho sin chocar con la mascota derecha
     lineas = [
         "Hoy es un día muy especial, y desde la Unidad de",
         "Seguimiento al Egresado y Bolsa de Trabajo queremos",
@@ -89,28 +78,28 @@ def crear_tarjeta_perfecta(nombre, carrera):
         "profesionales."
     ]
     
-    y_linea = 265
+    y_linea = 255
     for linea in lineas:
-        draw.text((45, y_linea), linea, fill="#334155", font=f_cuerpo)
-        y_linea += 39  # Separación generosa para simular el diseño original
+        draw.text((50, y_linea), linea, fill="#334155", font=f_cuerpo)
+        y_linea += 36  # Interlineado perfecto y espacioso
         
     # Mensaje de Cierre destacado abajo
-    draw.text((ancho // 2, 690), "¡Que disfrutes mucho de tu día!", fill="#1B365D", font=f_eslogan, anchor="mm")
+    draw.text((ancho // 2, 675), "¡Que disfrutes mucho de tu día!", fill="#1B365D", font=f_eslogan, anchor="mm")
     
-    # 3. Pie de Página Azul Oscuro Ampliado
-    draw.rectangle([0, alto - 135, ancho, alto], fill="#0B1D33")
-    draw.text((ancho // 2, alto - 100), "ATENTAMENTE,", fill="#38BDF8", font=f_pie_tit, anchor="mm")
-    draw.text((ancho // 2, alto - 72), "Unidad de Seguimiento al Egresado y Bolsa de Trabajo - DAA", fill="#FFFFFF", font=f_pie_sub, anchor="mm")
-    draw.text((ancho // 2, alto - 42), "Universidad Nacional Amazónica de Madre de Dios", fill="#94A3B8", font=f_pie_univ, anchor="mm")
+    # 3. Pie de Página Azul Oscuro Formato Completo
+    draw.rectangle([0, alto - 140, ancho, alto], fill="#0B1D33")
+    draw.text((ancho // 2, it_y := (alto - 105)), "ATENTAMENTE,", fill="#38BDF8", font=f_pie_tit, anchor="mm")
+    draw.text((ancho // 2, it_y + 28), "Unidad de Seguimiento al Egresado y Bolsa de Trabajo - DAA", fill="#FFFFFF", font=f_pie_sub, anchor="mm")
+    draw.text((ancho // 2, it_y + 55), "Universidad Nacional Amazónica de Madre de Dios", fill="#94A3B8", font=f_pie_univ, anchor="mm")
     
-    # 4. Inserción de la Mascota desde Google Drive
+    # 4. Inserción de la Mascota Jaguar desde Google Drive
     try:
         id_drive = "10fW68y7oiTcr-VcPoEW1V-OQ4O3psxup"
         url_mascota = f"https://docs.google.com/uc?export=download&id={id_drive}"
         res_img = requests.get(url_mascota, timeout=10)
         img_mascota = Image.open(io.BytesIO(res_img.content)).convert("RGBA")
-        img_mascota = img_mascota.resize((155, 180)) # Tamaño de mascota idéntico
-        imagen.paste(img_mascota, (540, 210), img_mascota)
+        img_mascota = img_mascota.resize((155, 180)) # Escala idéntica a la original
+        imagen.paste(img_mascota, (545, 205), img_mascota)
     except:
         pass
         
@@ -157,7 +146,7 @@ try:
                 
             link_wa = f"https://api.whatsapp.com/send?phone={num_limpio}&text={texto_codificado}"
             
-            # Generar la imagen real procesada con fuentes nativas pesadas
+            # Generar la tarjeta procesada con tipografías premium Montserrat de Google
             imagen_tarjeta = crear_tarjeta_perfecta(nombre_egresado, carrera_profesional)
             
             buf = io.BytesIO()
@@ -168,7 +157,7 @@ try:
             with col1:
                 st.image(imagen_tarjeta, use_container_width=True, caption=f"Tarjeta Oficial - {nombre_egresado}")
                 
-                # --- BOTÓN DE DESCARGA CON ESTILO REFORZADO ---
+                # --- BOTÓN DE DESCARGA CON ESTILO AZUL INSTITUCIONAL PREMIUM ---
                 st.download_button(
                     label="💾 Descargar Tarjeta PNG",
                     data=byte_im,
@@ -178,7 +167,7 @@ try:
                     use_container_width=True
                 )
                 
-                # Estilos CSS inyectados para el botón interactivo
+                # Inyección de estilos CSS avanzados para transformar el botón de descarga
                 st.markdown("""
                     <style>
                     div.stDownloadButton > button {
