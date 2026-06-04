@@ -38,24 +38,25 @@ st.markdown("""
         box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
     }
     
-    /* Estilos personalizados para los botones nativos de Streamlit */
-    div.stButton > button:first-child {
-        background-color: #25D366;
-        color: white;
-        border: none;
-        padding: 12px 24px;
-        font-weight: 700;
-        font-size: 16px;
-        border-radius: 10px;
-        width: 100%;
-        box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
-        transition: all 0.2s ease;
+    /* Estilos personalizados para los botones de enlace de WhatsApp de Streamlit */
+    div.stLinkButton > a {
+        background-color: #25D366 !important;
+        color: white !important;
+        border: none !important;
+        padding: 12px 24px !important;
+        font-weight: 700 !important;
+        font-size: 16px !important;
+        border-radius: 10px !important;
+        width: 100% !important;
+        text-align: center !important;
+        display: block !important;
+        box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3) !important;
+        transition: all 0.2s ease !important;
+        text-decoration: none !important;
     }
-    div.stButton > button:first-child:hover {
-        background-color: #20BA56;
-        border: none;
-        color: white;
-        transform: translateY(-1px);
+    div.stLinkButton > a:hover {
+        background-color: #20BA56 !important;
+        transform: translateY(-1px) !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -86,7 +87,7 @@ def descargar_datos():
     if "edit" in url_google_sheets:
         url_descarga = url_google_sheets.split('/edit')[0] + '/export?format=xlsx'
     else:
-        url_descarga = url_google_sheets
+        url_google_sheets
     resp = requests.get(url_descarga)
     return pd.read_excel(io.BytesIO(resp.content), header=None, skiprows=1)
 
@@ -107,7 +108,6 @@ def generar_tarjeta_html(nombre, carrera, index, jaguar_src, titulo_egresado, sa
         <meta charset="UTF-8">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
         <style>
-            /* Reset completo para eliminar el espacio superior del iframe */
             html, body {{ margin: 0; padding: 0; background-color: #FFFFFF; font-family: 'Segoe UI', Arial, sans-serif; }}
             
             .tarjeta-contenedor {{
@@ -292,14 +292,13 @@ try:
             # Identificador único para el control estricto del egresado
             id_unico_egresado = f"{nombre_egresado}_{dia_buscado}"
 
-            # Definición de diccionarios de color por género para una consistencia total al 100%
+            # Definición de diccionarios de color por género
             colores_render = {}
 
             if sexo_celda in ["M", "MASCULINO"]:
                 titulo_egresado = "Egresado"
                 saludo_inicial = "Estimado egresado"
                 art_saludo = "nuestro profesional"
-                
                 colores_render = {
                     'banner': 'linear-gradient(135deg, #1B365D 0%, #2A52BE 100%)', 
                     'eslogan': '#1B365D',
@@ -310,7 +309,6 @@ try:
                 titulo_egresado = "Egresada"
                 saludo_inicial = "Estimada egresada"
                 art_saludo = "nuestra profesional"
-                
                 colores_render = {
                     'banner': 'linear-gradient(135deg, #800080 0%, #5A005A 100%)', 
                     'eslogan': '#800080',                                         
@@ -321,7 +319,6 @@ try:
                 titulo_egresado = "Egresado(a)"
                 saludo_inicial = "Estimado(a) egresado(a)"
                 art_saludo = "nuestro(a) profesional"
-                
                 colores_render = {
                     'banner': 'linear-gradient(135deg, #1B365D 0%, #0B1D33 100%)',
                     'eslogan': '#1B365D',
@@ -344,28 +341,24 @@ try:
             col1, col2 = st.columns([1.2, 1.0])
             with col1:
                 tarjeta_html = generar_tarjeta_html(nombre_egresado, carrera_profesional, index, jaguar_src, titulo_egresado, saludo_inicial, colores_render)
-                # Reducimos el alto del componente iframe a 600 para que se ajuste exactamente al borde de la tarjeta
                 components.html(tarjeta_html, height=600, scrolling=False)
                 
             with col2:
                 st.markdown(f"<h3 style='margin-top:0; color:#1E293B;'>🥳 {nombre_egresado}</h3>", unsafe_allow_html=True)
                 st.info(texto_whatsapp)
                 
-                # Comprobar si este cumpleañero ya fue procesado hoy
                 ya_enviado = id_unico_egresado in st.session_state.egresados_saludados
                 
                 if ya_enviado:
-                    st.button(f"✅ Saludo registrado para {nombre_egresado}", key=f"btn_success_{index}", disabled=True)
+                    st.button(f"✅ Saludo contabilizado para {nombre_egresado}", key=f"btn_success_{index}", disabled=True)
                 else:
-                    if st.button(f"💬 Enviar por WhatsApp", key=f"btn_action_{index}"):
+                    # Enlace nativo directo que NUNCA se congela
+                    st.link_button("💬 Abrir WhatsApp y Enviar", url=link_wa, use_container_width=True)
+                    
+                    # Botón complementario inmediato para confirmar y sumarlo al panel superior
+                    if st.button("✔️ Confirmar envío realizado para el conteo", key=f"btn_count_{index}"):
                         st.session_state.egresados_saludados.add(id_unico_egresado)
                         st.session_state.registro_envios[dia_buscado] += 1
-                        
-                        components.html(f"""
-                            <script>
-                                window.open("{link_wa}", "_blank");
-                            </script>
-                        """, height=0)
                         st.rerun()
 
             st.markdown('</div>', unsafe_allow_html=True)
