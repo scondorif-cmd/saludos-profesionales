@@ -67,50 +67,63 @@ try:
                 
             link_wa = f"https://api.whatsapp.com/send?phone={num_limpio}&text={texto_codificado}"
             
-            # --- DISEÑO DIGITAL EXACTO EN HTML (Impedirá distorsiones de fuentes) ---
+            # Conversión de tu enlace de Google Drive a descarga directa e idónea para HTML
+            id_drive = "10fW68y7oiTcr-VcPoEW1V-OQ4O3psxup"
+            url_mascota_directa = f"https://lh3.googleusercontent.com/d/{id_drive}"
+            
+            # --- ESTRUCTURA DE TABLA FIJA (Mantiene las proporciones exactas de Tarjeta_SHANIRA.png) ---
             html_tarjeta = f"""
-            <div style="background-color: #FFFFFF; border-radius: 0px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 550px; font-family: 'Arial', sans-serif; overflow: hidden; margin: 10px auto; border: 1px solid #E2E8F0;">
-                
-                <div style="background-color: #1B365D; padding: 30px 15px; text-align: center;">
-                    <h2 style="color: #FFFFFF; margin: 0; font-size: 24px; font-weight: bold; line-height: 1.3;">¡Feliz Cumpleaños, {nombre_egresado}! 🎂🎉</h2>
-                    <p style="color: #E2E8F0; margin: 8px 0 0 0; font-size: 13px; font-weight: normal;">Egresado(a) de la Carrera Profesional de {carrera_profesional.upper()}</p>
-                </div>
-                
-                <div style="padding: 30px 25px; background-color: #FFFFFF; position: relative;">
+            <div style="display: flex; justify-content: center; background-color: #F8FAFC; padding: 10px;">
+                <table width="550" cellspacing="0" cellpadding="0" style="background-color: #FFFFFF; font-family: 'Arial', sans-serif; border: 1px solid #CBD5E1; border-collapse: collapse; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
                     
-                    <div style="float: right; margin-left: 15px; margin-bottom: 10px; width: 130px;">
-                        <img src="https://raw.githubusercontent.com/scondorif-cmd/saludos-profesionales/principal/mascota.png" style="width: 100%; height: auto; display: block;" alt="Mascota">
-                    </div>
+                    <tr>
+                        <td bgcolor="#1B365D" align="center" style="padding: 25px 20px; border-bottom: 3px solid #1E3A8A;">
+                            <h2 style="color: #FFFFFF; margin: 0; font-size: 24px; font-weight: bold; line-height: 1.3; font-family: 'Arial', sans-serif;">¡Feliz Cumpleaños, {nombre_egresado}! 🎂🎉</h2>
+                            <p style="color: #E2E8F0; margin: 6px 0 0 0; font-size: 13px; font-weight: normal; font-family: 'Arial', sans-serif;">Egresado(a) de la Carrera Profesional de {carrera_profesional.upper()}</p>
+                        </td>
+                    </tr>
                     
-                    <p style="color: #1E293B; font-weight: bold; font-size: 16px; margin: 0 0 15px 0;">Estimado(a) egresado(a),</p>
+                    <tr>
+                        <td style="padding: 25px 25px 15px 25px; bgcolor: #FFFFFF;">
+                            <table width="100%" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <td valign="top" style="color: #334155; font-size: 14px; line-height: 1.6; text-align: justify; font-family: 'Arial', sans-serif;">
+                                        <p style="color: #1E293B; font-weight: bold; font-size: 16px; margin: 0 0 12px 0;">Estimado(a) egresado(a),</p>
+                                        <p style="margin: 0 0 12px 0;">Hoy es un día muy especial, y desde la <strong>Unidad de Seguimiento al Egresado y Bolsa de Trabajo</strong> queremos hacerte llegar nuestras más sinceras felicitaciones por tu cumpleaños.</p>
+                                        <p style="margin: 0 0 15px 0;">Nos sentimos muy orgullosos de tus pasos y de tenerte como miembro activo de nuestra comunidad de graduados. Deseamos que pases un día extraordinario junto a tus seres queridos y que este nuevo año esté lleno de salud, felicidad y grandes éxitos profesionales.</p>
+                                    </td>
+                                    
+                                    <td width="140" valign="top" align="right" style="padding-left: 15px;">
+                                        <img src="{url_mascota_directa}" width="130" style="display: block; min-height: 150px;" alt="Mascota UNAMAD">
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
                     
-                    <p style="color: #334155; font-size: 14.5px; line-height: 1.6; margin: 0 0 15px 0; text-align: justify;">
-                        Hoy es un día muy especial, y desde la <strong style="color: #1E293B;">Unidad de Seguimiento al Egresado y Bolsa de Trabajo</strong> queremos hacerte llegar nuestras más sinceras felicitaciones por tu cumpleaños.
-                    </p>
+                    <tr>
+                        <td align="center" style="padding: 10px 20px 25px 20px; bgcolor: #FFFFFF;">
+                            <h4 style="color: #1B365D; margin: 0; font-size: 18px; font-weight: bold; font-family: 'Arial', sans-serif;">¡Que disfrutes mucho de tu día!</h4>
+                        </td>
+                    </tr>
                     
-                    <p style="color: #334155; font-size: 14.5px; line-height: 1.6; margin: 0 0 20px 0; text-align: justify;">
-                        Nos sentimos muy orgullosos de tus pasos y de tenerte como miembro activo de nuestra comunidad de graduados. Deseamos que pases un día extraordinario junto a tus seres queridos y que este nuevo año esté lleno de salud, felicidad y grandes éxitos profesionales.
-                    </p>
-                    
-                    <div style="clear: both;"></div>
-                    
-                    <h4 style="color: #1B365D; text-align: center; font-size: 18px; font-weight: bold; margin: 20px 0 5px 0;">¡Que disfrutes mucho de tu día!</h4>
-                </div>
-                
-                <div style="background-color: #0B1D33; padding: 20px 15px; text-align: center; color: #FFFFFF; font-size: 12px; line-height: 1.5;">
-                    <span style="color: #38BDF8; font-weight: bold; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">ATENTAMENTE,</span>
-                    <strong style="display: block; font-size: 13px; color: #FFFFFF;">Unidad de Seguimiento al Egresado y Bolsa de Trabajo - DAA</strong>
-                    <span style="color: #94A3B8; display: block; margin-top: 2px;">Universidad Nacional Amazónica de Madre de Dios</span>
-                </div>
+                    <tr>
+                        <td bgcolor="#0B1D33" align="center" style="padding: 20px 15px; color: #FFFFFF; font-size: 11px; line-height: 1.5; font-family: 'Arial', sans-serif;">
+                            <span style="color: #38BDF8; font-weight: bold; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">ATENTAMENTE,</span>
+                            <strong style="display: block; font-size: 13px; color: #FFFFFF;">Unidad de Seguimiento al Egresado y Bolsa de Trabajo - DAA</strong>
+                            <span style="color: #94A3B8; display: block; margin-top: 2px;">Universidad Nacional Amazónica de Madre de Dios</span>
+                        </td>
+                    </tr>
+                </table>
             </div>
             """
             
-            # Interfaz de visualización limpia en 2 columnas fijas en Streamlit
-            col1, col2 = st.columns([1.2, 1.0])
+            # Mostrar la interfaz organizada de Streamlit
+            col1, col2 = st.columns([1.3, 1.0])
             with col1:
-                # Renderiza la tarjeta perfecta en HTML nativo
-                st.components.v1.html(html_tarjeta, height=550, scrolling=False)
-                st.caption("📸 *Toma una captura de pantalla a la tarjeta para enviarla nítida y perfecta.*")
+                # Renderizador HTML con dimensiones bloqueadas
+                st.components.v1.html(html_tarjeta, height=560, scrolling=False)
+                st.caption("📸 *Toma una captura de pantalla a la tarjeta para enviarla nítida y con las proporciones correctas.*")
                 
             with col2:
                 st.markdown(f"### 🥳 {nombre_egresado}")
