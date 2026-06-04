@@ -107,54 +107,56 @@ def generar_tarjeta_html(nombre, carrera, index, jaguar_src, titulo_egresado, sa
         <meta charset="UTF-8">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
         <style>
-            body {{ margin: 0; padding: 5px; font-family: 'Segoe UI', Arial, sans-serif; background-color: #FFFFFF; }}
+            /* Reset completo para eliminar el espacio superior del iframe */
+            html, body {{ margin: 0; padding: 0; background-color: #FFFFFF; font-family: 'Segoe UI', Arial, sans-serif; }}
+            
             .tarjeta-contenedor {{
                 background-color: #FFFFFF; 
                 border-radius: 12px; 
-                box-shadow: 0 8px 24px rgba(0,0,0,0.12); 
+                box-shadow: 0 4px 14px rgba(0,0,0,0.08); 
                 overflow: hidden; 
-                max-width: 450px; 
+                max-width: 440px; 
                 margin: 0 auto; 
                 border: 1px solid #E2E8F0;
             }}
             .banner-superior {{
                 background: {colores['banner']}; 
-                padding: 24px 16px; 
+                padding: 22px 16px; 
                 text-align: center; 
                 color: white;
             }}
-            .banner-superior h2 {{ margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }}
-            .banner-superior p {{ margin: 6px 0 0 0; color: #E0F2FE; font-size: 11.5px; font-weight: 500; text-transform: uppercase; }}
-            .cuerpo {{ padding: 20px; }}
-            .saludo {{ color: #1E293B; font-weight: 700; font-size: 15px; margin-top: 0; margin-bottom: 12px; }}
+            .banner-superior h2 {{ margin: 0; font-size: 19px; font-weight: 700; letter-spacing: -0.3px; }}
+            .banner-superior p {{ margin: 6px 0 0 0; color: #E0F2FE; font-size: 11px; font-weight: 500; text-transform: uppercase; }}
+            .cuerpo {{ padding: 18px; }}
+            .saludo {{ color: #1E293B; font-weight: 700; font-size: 14.5px; margin-top: 0; margin-bottom: 12px; }}
             
-            .contenido-flex {{ display: flex; gap: 15px; align-items: center; margin-bottom: 12px; }}
-            .texto-mensaje-corto {{ color: #334155; font-size: 13px; line-height: 1.5; text-align: justify; flex: 1; }}
-            .jaguar-contenedor {{ width: 105px; text-align: center; flex-shrink: 0; }}
+            .contenido-flex {{ display: flex; gap: 14px; align-items: center; margin-bottom: 12px; }}
+            .texto-mensaje-corto {{ color: #334155; font-size: 12.5px; line-height: 1.5; text-align: justify; flex: 1; }}
+            .jaguar-contenedor {{ width: 100px; text-align: center; flex-shrink: 0; }}
             .jaguar-contenedor img {{ width: 100%; height: auto; border-radius: 8px; }}
             
-            .texto-mensaje-largo {{ color: #334155; font-size: 13px; line-height: 1.5; text-align: justify; width: 100%; }}
+            .texto-mensaje-largo {{ color: #334155; font-size: 12.5px; line-height: 1.5; text-align: justify; width: 100%; }}
             
-            .eslogan {{ color: {colores['eslogan']}; text-align: center; margin: 18px 0 4px 0; font-size: 15px; font-weight: 700; }}
+            .eslogan {{ color: {colores['eslogan']}; text-align: center; margin: 16px 0 4px 0; font-size: 14.5px; font-weight: 700; }}
             .pie-pagina {{
                 background: {colores['pie_fondo']}; 
                 padding: 14px; 
                 text-align: center; 
                 color: white; 
-                font-size: 10.5px; 
+                font-size: 10px; 
                 line-height: 1.4;
             }}
             .btn-copiar {{
                 display: block;
                 width: 100%;
-                max-width: 450px;
-                margin: 12px auto 0 auto;
+                max-width: 440px;
+                margin: 10px auto 0 auto;
                 background: #F1F5F9;
                 color: #334155;
                 border: 1px solid #CBD5E1;
-                padding: 10px;
+                padding: 9px;
                 font-weight: 600;
-                font-size: 13px;
+                font-size: 12.5px;
                 border-radius: 8px;
                 cursor: pointer;
                 text-align: center;
@@ -299,9 +301,9 @@ try:
                 art_saludo = "nuestro profesional"
                 
                 colores_render = {
-                    'banner': 'linear-gradient(135deg, #1B365D 0%, #2A52BE 100%)', # Azul institucional ejecutivo
+                    'banner': 'linear-gradient(135deg, #1B365D 0%, #2A52BE 100%)', 
                     'eslogan': '#1B365D',
-                    'atentamente': '#38BDF8', # Azul claro brillante
+                    'atentamente': '#38BDF8', 
                     'pie_fondo': '#0B1D33'
                 }
             elif sexo_celda in ["F", "FEMENINO"]:
@@ -310,10 +312,10 @@ try:
                 art_saludo = "nuestra profesional"
                 
                 colores_render = {
-                    'banner': 'linear-gradient(135deg, #800080 0%, #5A005A 100%)', # Púrpura/Guinda vibrante corporativo
-                    'eslogan': '#800080',                                         # Eslogan a juego en púrpura
-                    'atentamente': '#F472B6',                                     # Rosa/Fucsia institucional para destacar el ATENTAMENTE
-                    'pie_fondo': '#3B003B'                                        # Guinda oscuro profundo para el fondo del pie
+                    'banner': 'linear-gradient(135deg, #800080 0%, #5A005A 100%)', 
+                    'eslogan': '#800080',                                         
+                    'atentamente': '#F472B6',                                     
+                    'pie_fondo': '#3B003B'                                        
                 }
             else:
                 titulo_egresado = "Egresado(a)"
@@ -341,9 +343,9 @@ try:
             
             col1, col2 = st.columns([1.2, 1.0])
             with col1:
-                # Se envía el diccionario completo 'colores_render' mapeando todas las propiedades visuales
                 tarjeta_html = generar_tarjeta_html(nombre_egresado, carrera_profesional, index, jaguar_src, titulo_egresado, saludo_inicial, colores_render)
-                components.html(tarjeta_html, height=660, scrolling=False)
+                # Reducimos el alto del componente iframe a 600 para que se ajuste exactamente al borde de la tarjeta
+                components.html(tarjeta_html, height=600, scrolling=False)
                 
             with col2:
                 st.markdown(f"<h3 style='margin-top:0; color:#1E293B;'>🥳 {nombre_egresado}</h3>", unsafe_allow_html=True)
