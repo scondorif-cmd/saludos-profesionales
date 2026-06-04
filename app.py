@@ -28,52 +28,41 @@ def descargar_datos():
     resp = requests.get(url_descarga)
     return pd.read_excel(io.BytesIO(resp.content), header=None, skiprows=1)
 
-def conseguir_fuente_sistema(es_bold, tamano):
-    """Busca de forma infalible fuentes sans-serif escalables en el servidor Linux de Streamlit"""
-    opciones = [
+def conseguir_fuente_servidor(es_bold, tamano):
+    """Detecta las fuentes del sistema Linux de Streamlit de forma infalible"""
+    rutas_linux = [
         "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf" if es_bold else "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" if es_bold else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
         "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf" if es_bold else "/usr/share/fonts/truetype/freefont/FreeSans.ttf"
     ]
-    for ruta in opciones:
+    for ruta in rutas_linux:
         if os.path.exists(ruta):
             return ImageFont.truetype(ruta, tamano)
-    
-    # Intentos por carga directa de fuentes del sistema
-    try:
-        return ImageFont.truetype("LiberationSans-Bold.ttf" if es_bold else "LiberationSans-Regular.ttf", tamano)
-    except:
-        return ImageFont.load_default()
+    return ImageFont.load_default()
 
 def crear_tarjeta_perfecta(nombre, carrera):
-    # Dimensiones exactas basadas en Tarjeta_SHANIRA.png (750 x 850)
+    # Dimensiones corporativas oficiales basadas en Tarjeta_SHANIRA.png (750 x 850)
     ancho, alto = 750, 850
     imagen = Image.new("RGB", (ancho, alto), "#FFFFFF")
     draw = ImageDraw.Draw(imagen)
     
-    # === TAMAÑOS MÁXIMOS INTERNOS (Grosor idéntico a Arial de Windows) ===
-    f_titulo = conseguir_fuente_sistema(True, 32)        # Título del Egresado
-    f_subtitulo = conseguir_fuente_sistema(False, 14)    # Carrera profesional
-    f_cuerpo_bold = conseguir_fuente_sistema(True, 22)   # "Estimado(a) egresado(a),"
-    f_cuerpo = conseguir_fuente_sistema(False, 19)      # Texto completo del cuerpo
-    f_eslogan = conseguir_fuente_sistema(True, 26)       # "¡Que disfrutes mucho de tu día!"
-    f_pie_tit = conseguir_fuente_sistema(True, 13)       # "ATENTAMENTE,"
-    f_pie_sub = conseguir_fuente_sistema(True, 15)       # Unidad de seguimiento
-    f_pie_univ = conseguir_fuente_sistema(False, 13)     # Universidad
+    # === ESCALADO MAXIMIZADO DE FUENTES (Grosores idénticos a Tarjeta_SHANIRA.png) ===
+    f_titulo = conseguir_fuente_servidor(True, 34)         # Nombre en el Banner
+    f_subtitulo = conseguir_fuente_servidor(False, 15)     # Carrera Profesional
+    f_cuerpo_bold = conseguir_fuente_servidor(True, 24)    # "Estimado(a) egresado(a),"
+    f_cuerpo = conseguir_fuente_servidor(False, 20)       # Bloque de felicitación
+    f_eslogan = conseguir_fuente_servidor(True, 26)        # ¡Que disfrutes mucho de tu día!
+    f_pie_tit = conseguir_fuente_servidor(True, 14)        # ATENTAMENTE,
+    f_pie_sub = conseguir_fuente_servidor(True, 16)        # Unidad de Seguimiento...
+    f_pie_univ = conseguir_fuente_servidor(False, 13)      # Universidad Nacional...
 
-    # 1. Encabezado Azul Institucional
+    # 1. Banner Superior Azul Institucional
     draw.rectangle([0, 0, ancho, 155], fill="#1B365D")
     draw.text((ancho // 2, 55), f"¡Feliz Cumpleaños, {nombre.upper()}!", fill="#FFFFFF", font=f_titulo, anchor="mm")
+    draw.text((ancho // 2, 110), f"Egresado(a) de la Carrera Profesional de {carrera.upper()}", fill="#E2E8F0", font=f_subtitulo, anchor="mm")
     
-    # Manejo de carreras largas para evitar desbordes visuales
-    texto_carrera = f"Egresado(a) de la Carrera Profesional de {carrera.upper()}"
-    if len(texto_carrera) > 65:
-        draw.text((ancho // 2, 105), texto_carrera[:65] + "...", fill="#E2E8F0", font=f_subtitulo, anchor="mm")
-    else:
-        draw.text((ancho // 2, 105), texto_carrera, fill="#E2E8F0", font=f_subtitulo, anchor="mm")
-    
-    # 2. Bloque de Texto del Cuerpo (Perfectamente formateado y alineado a la izquierda)
-    draw.text((50, 200), "Estimado(a) egresado(a),", fill="#1E293B", font=f_cuerpo_bold)
+    # 2. Cuerpo del Mensaje (Con márgenes amplios y saltos limpios)
+    draw.text((50, 205), "Estimado(a) egresado(a),", fill="#1E293B", font=f_cuerpo_bold)
     
     lineas = [
         "Hoy es un día muy especial, y desde la Unidad de",
@@ -88,31 +77,30 @@ def crear_tarjeta_perfecta(nombre, carrera):
         "profesionales."
     ]
     
-    y_linea = 250
+    y_linea = 255
     for linea in lineas:
         draw.text((50, y_linea), linea, fill="#334155", font=f_cuerpo)
-        y_linea += 36  # Separación perfecta
+        y_linea += 38  # Interlineado óptimo y espacioso
         
-    # Mensaje de Cierre Destacado
-    draw.text((ancho // 2, 680), "¡Que disfrutes mucho de tu día!", fill="#1B365D", font=f_eslogan, anchor="mm")
+    # Deseos finales centrado
+    draw.text((ancho // 2, 675), "¡Que disfrutes mucho de tu día!", fill="#1B365D", font=f_eslogan, anchor="mm")
     
-    # 3. Pie de Página Azul Oscuro Ampliado
+    # 3. Bloque Inferior del Pie de Página (Azul Oscuro)
     draw.rectangle([0, alto - 140, ancho, alto], fill="#0B1D33")
     draw.text((ancho // 2, alto - 105), "ATENTAMENTE,", fill="#38BDF8", font=f_pie_tit, anchor="mm")
     draw.text((ancho // 2, alto - 75), "Unidad de Seguimiento al Egresado y Bolsa de Trabajo - DAA", fill="#FFFFFF", font=f_pie_sub, anchor="mm")
     draw.text((ancho // 2, alto - 48), "Universidad Nacional Amazónica de Madre de Dios", fill="#94A3B8", font=f_pie_univ, anchor="mm")
     
-    # 4. Inserción de la Mascota Jaguar desde Google Drive con Fallback Seguro
+    # 4. Integración de la Mascota Jaguar (Desde tu Google Drive)
     try:
         id_drive = "10fW68y7oiTcr-VcPoEW1V-OQ4O3psxup"
         url_mascota = f"https://docs.google.com/uc?export=download&id={id_drive}"
-        res_img = requests.get(url_mascota, timeout=8)
+        res_img = requests.get(url_mascota, timeout=10)
         img_mascota = Image.open(io.BytesIO(res_img.content)).convert("RGBA")
         img_mascota = img_mascota.resize((155, 180)) 
-        imagen.paste(img_mascota, (540, 200), img_mascota)
+        imagen.paste(img_mascota, (540, 205), img_mascota)
     except:
-        # Si falla la descarga, dibuja un recuadro estético para evitar dejar la zona rota
-        draw.rectangle([540, 200, 695, 380], outline="#E2E8F0", width=1)
+        pass
         
     return imagen
 
@@ -147,7 +135,7 @@ try:
             contador += 1
             nombre_egresado = nombre_completo.split(",")[1].strip() if "," in nombre_completo else nombre_completo
             
-            # Mensaje estructurado de WhatsApp
+            # Formateo de mensaje para WhatsApp
             texto_whatsapp = f"¡HOY CELEBRAMOS SU CUMPLEAÑOS! 🎂🎉\n\nEnviamos un afectuoso saludo a nuestro(a) profesional que festeja su onomástico hoy:\n\n*{nombre_egresado}*\n🎓 {carrera_profesional}\n\n¡Muchas felicidades y que tenga un excelente día! ✨🎈"
             texto_codificado = urllib.parse.quote(texto_whatsapp)
             
@@ -157,7 +145,7 @@ try:
                 
             link_wa = f"https://api.whatsapp.com/send?phone={num_limpio}&text={texto_codificado}"
             
-            # Generar la imagen real usando el motor de fuentes fijas del sistema
+            # Generar tarjeta final usando el motor interno del servidor
             imagen_tarjeta = crear_tarjeta_perfecta(nombre_egresado, carrera_profesional)
             
             buf = io.BytesIO()
@@ -168,7 +156,7 @@ try:
             with col1:
                 st.image(imagen_tarjeta, use_container_width=True, caption=f"Tarjeta Oficial - {nombre_egresado}")
                 
-                # --- BOTÓN DE DESCARGA CON ESTILO REFORZADO ---
+                # Botón de Descarga Estilizado en Azul Premium
                 st.download_button(
                     label="💾 Descargar Tarjeta PNG",
                     data=byte_im,
@@ -178,6 +166,7 @@ try:
                     use_container_width=True
                 )
                 
+                # Inyección estética CSS
                 st.markdown("""
                     <style>
                     div.stDownloadButton > button {
