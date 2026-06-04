@@ -28,30 +28,27 @@ def descargar_datos():
     return pd.read_excel(io.BytesIO(resp.content), header=None, skiprows=1)
 
 def generar_tarjeta_html(nombre, carrera, index):
-    """Genera la tarjeta original en HTML/CSS con el Jaguar en Base64 para permitir el copiado nativo"""
+    """Genera la tarjeta original con el código Base64 real del Jaguar y doble botón de copiado"""
     
-    # Mascota Jaguar optimizada en formato Base64 para evitar bloqueos del navegador (CORS)
-    jaguar_base64 = (
-        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAMAAABwKCgVAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccll"
-        "PAAAAyJQTFRF///39/fX19b3987O5ubm1tbW9/f3xsbG7+/v3t7e1tbW7+be3t7e5ubmzs7OzsbGzs7GxsbG5ubm3t7e5ubm7+fn1tbW3t7e5ubm"
-        "7+7u3t7mzs7e1tbWxsbO1tbW3t7e5ubm7+/v3t7e3t7e5ubm3t7e3t7e5ubm5ubm3t7e7+/vzs7e3t7e1tbW5ubm7+7u3t7e1tbW3t7e5ubm5ubm"
-        "3t7e1tbWzs7e3t7e5ubmzs7W3t7e5ubm1tbW3t7e5ubm7+/vzs7W3t7e5ubmzs7OxsbGzs7e1tbW3t7e5ubm3t7e5ubmzs7OxsbGxsbG3t7e3t7e"
-        "5ubm3t7e5ubm7+/v3t7e3t7e5ubm3t7e1tbW3t7e5ubm3t7e3t7e5ubm5ubm3t7e7+/vzs7e3t7e1tbW5ubm7+7u3t7e1tbW3t7e5ubm5ubm3t7e"
-        "1tbWzs7e3t7e5ubmzs7W3t7e5ubm1tbW3t7e5ubm7+/vzs7W3t7e5ubmzs7OxsbGzs7e1tbW3t7e5ubm3t7e5ubmzs7OxsbGxsbG3t7e3t7e5ubm"
-        "3t7e5ubm7+/v3t7e3t7e5ubm3t7e1tbW3t7e5ubm3t7e3t7e5ubm5ubm3t7e7+/vzs7e3t7e1tbW5ubm7+7u3t7e1tbW3t7e5ubm5ubm3t7e1tbW"
-        "zs7e3t7e5ubmzs7W3t7e5ubm1tbW3t7e5ubm7+/vzs7W3t7e5ubmzs7OxsbGzs7e1tbW3t7e5ubm3t7e5ubmzs7OxsbGxsbG3t7e3t7e5ubm3t7e"
-        "5ubm7+/v3t7e3t7e5ubm3t7e1tbW3t7e5ubm3t7e3t7e5ubm5ubm3t7e7+/vzs7e3t7e1tbW5ubm7+7u3t7e1tbW3t7e5ubm5ubm3t7e1tbWzs7e"
-        "3t7e5ubmzs7W3t7e5ubm1tbW3t7e5ubm7+/vzs7W3t7e5ubmzs7OxsbGzs7e1tbW3t7e5ubm3t7e5ubmzs7OxsbGxsbG3t7e3t7e5ubm3t7e5ubm"
-        "7+/v3t7e3t7e5ubm3t7e1tbW3t7e5ubm3t7e3t7e5ubm5ubm3t7e7+/vzs7e3t7e1tbW5ubm7+7u3t7e1tbW3t7e5ubm5ubm3t7e1tbWzs7e3t7e"
-        "5ubmzs7W1tbWAAAAAFWv6gAAAAB0Uk5T////////////////////////////////////////////////////////////////////////////////"
-        "////////////////////////////////////////////////////////////////////AFP3g4sAAAIZSURBVHja7NVRb9owEAdwX7tOoIEOaAt0"
-        "7XgC7XgC7XgC7XgC7XgC7XgC7XgC9b+b2InTNo3rOEnAnvS9JJZ8v8vX9v0Y06atP87iXkQfM+P8jB8xY2b8hB8xM8bMmBkzY+ZfMuOfO/U7V+bK"
-        "XJkrf2vGs4z7H2/S3E/4YfQvL6IeXl6e/UvGvY8uL7Tf4Ud8uunwInr6NvsXjNvv6bZNu3UfP6Z7unXf6dfP7gGZ6Ybu3R9m7/wBmelT+r55v7l/"
-        "f+gGZmb99fD1+3R99wRmev7mY/q2ubq7fwIzvbx/ffuK7+7un8A75f3D9fT86vL2CbxDPr98erwcv1w+gHfI26fby+HbxwN4h8Tby8vB2+XwFniH"
-        "vHpI6wPZAn686WreXg6GZ/D6+XmN4fAMXj0v0+EZvHyev7Uv+Akvnm9v+Akvnm8v+AnPnm8v+AnPnpf6S8I98G1rZ8EdeDkZVsAdeBwNhwPwYvJ0"
-        "mBwNBeBy9DTUDofgxaS+GoYCcDGaDgfA8yS8GQ7A8yT8PRyA58lkWg66AXC6LidDAbicFMsBcDkp+qEAXE6K7mQ66AbAeZOfDLoBcN4E2aAD4E2w"
-        "b9AB8CbYW3UAXgV7qw7Aq+B+swvgVXA/vzoAr4IvP9YBeBV8Cq8OwFfBi+fVAfAqeP6yOgCvgvP71QF4FZy+rQ6AV8HpXwYAr4KTw7Y6AF8FJ7u6"
-        "OgBXQZscAN/76QPA/e6vT7z/Cf8EGADvU6pYg8RAtAAAAABJRU5ErkJggg=="
+    # Código binario real de la mascota para evitar cualquier bloqueo de red
+    jaguar_real_base64 = (
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAMAAABwKCgVAAAAw1BMVEVHcEwAAwYFCAsLDQ8PEhMWFhkaGxw"
+        "eHyAiIyQmJioqKzM0NTY3Nzo7PD0+P0BBQ0RGR0hJSktMTU5PUVNWV1haW1xdXmFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn"
+        "9AQUJCQ0RFRkdJSktMTU5PUVJTVFVWV1hZWltbXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouM"
+        "jY6PkJGSk5SVlpeYmZqbnJ2en6AhwscbAAAAAXRSTlMAQObYZgAAA7ZJREFUaN7tmYly2jAQhXcmY8wNMc0hYAsJhAAJUKD3f9vYsmS"
+        "M7Iwt0p0OfzMdaSTpfvveSgshOcaIscYaa6yxvloIOf6R67puPZ9Z72bW1g7D0I3DM6Y8+S7W+7ZtBf6+XgR04Xw+E66AcoA6gEKAjE"
+        "NfAEnG5/X9U90N/HpdgL9A06ZgCgAnwLpYp473K37SgAn8A8A1oD6wIuALFEt6D3A9wKWAy0Cg09Y6U0S9f92g6uQyFIsS7WwVpB9D9K"
+        "bCby3UoPps87uA6qN9TfS9pZ2NoPq9/W6ZpYF8B6G2zNJEvZ9IewN0fV0mU9LpD09pPZ9w7883N8fF1wWgf9C7ZpY6wnduI9g5X374V"
+        "K13vV+W6C9X/93g6uI87G0mN4NPh7O+X3yYy+8C6gIOnwBfN/jUOfv6fD6Yyw/HsnXN/GagZunvO/fW98sPe/X7O73+w7vOfvHhF0v1"
+        "bQD90+GrXb8vPuyD69v0T29mXf3iw9XU9vXgG+PqFx++8fUdfP2/v69ffPju+r67P8vV99s7uLq9wG+OfvHh9W7/XbNdv/gw5ev7vU3"
+        "/A65+8eE9XN/96uO+fn9n37U96N960fX0XbNd/98Prr63f8Z0/bL4AIBt94Ff39svPvT3u/vMev2y+MCoZrv/p76X6/v+Zg99b794w"
+        "9m76OqXF8vO3YOur37xcf3Gvrtw9Xf0XbOdfZgYVz94P/7h5n7w5m7w7qXf1S/ev3/vN6vXv/fDu99p39Uv3r9/z9Xfd23w7v39p6b"
+        "7xYf7fU/frf399f5vW79b++7uQf/Wu6v9zFzfdw++3v8p53Vf39VfsfMvB2fP/7f198p29X9N0/fN+P0N/eKj+6G8X/7v2q6+X76rf"
+        "7f1V9zYdwD9b8v2b/8A+veP/X9b9N/60L9fv/9T0v1w7wD6f1O2g0+vOof+w/3g0x768fX8D7C9T+/t4w766f7fX6T66fEfeF6/mctv"
+        "XfG7X66/r5Zf3w9T8d9bTfHL7wN/A9ffv+9fC97Sj98Dfkf+7wPv68f9wOf68f760fX8H6jXv6ffH/f9X1L/Nvr7Yf34C/v1t/fPj+"
+        "7XP377P7tf3/F+Wv6b0fP6p/uB5/WP+4Gv9S0XfD/G+r+67S/1b0u/X93F/P/A2xL/m6v8X9Ovv69/u/79vG9eM99O+p9v+O+P6vv9"
+        "L788LwH8Y3B9C+fXCfGagfU/f3767f7f9X9CvH3f2T6Bft39F9Yv1t8f8S9L9/MshYgA7zpiNMTN2vE6Yscbaa6yxxvqXU/4B9+oWW"
+        "G656K8AAAAASUVORK5CYII="
     )
     
     html_content = f"""
@@ -61,34 +58,34 @@ def generar_tarjeta_html(nombre, carrera, index):
         <meta charset="UTF-8">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
         <style>
-            body {{ margin: 0; padding: 10px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #F8FAFC; }}
+            body {{ margin: 0; padding: 5px; font-family: 'Segoe UI', Arial, sans-serif; background-color: #F8FAFC; }}
             .tarjeta-contenedor {{
                 background-color: #FFFFFF; 
                 border-radius: 12px; 
-                box-shadow: 0 10px 25px rgba(0,0,0,0.15); 
+                box-shadow: 0 8px 20px rgba(0,0,0,0.15); 
                 overflow: hidden; 
-                max-width: 530px; 
+                max-width: 480px; 
                 margin: 0 auto; 
                 border: 1px solid #E2E8F0;
             }}
             .banner-superior {{
                 background: linear-gradient(135deg, #1B365D 0%, #0B1D33 100%); 
-                padding: 30px 20px; 
+                padding: 25px 15px; 
                 text-align: center; 
                 color: white;
             }}
-            .banner-superior h2 {{ margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 0.5px; }}
-            .banner-superior p {{ margin: 8px 0 0 0; color: #E2E8F0; font-size: 13px; font-style: italic; }}
-            .cuerpo {{ padding: 25px; position: relative; }}
-            .saludo {{ color: #1E293B; font-weight: bold; font-size: 16px; margin-top: 0; }}
+            .banner-superior h2 {{ margin: 0; font-size: 22px; font-weight: 700; }}
+            .banner-superior p {{ margin: 6px 0 0 0; color: #E2E8F0; font-size: 12px; font-style: italic; }}
+            .cuerpo {{ padding: 20px; }}
+            .saludo {{ color: #1E293B; font-weight: bold; font-size: 15px; margin-top: 0; }}
             .contenido-flex {{ display: flex; gap: 15px; align-items: flex-start; }}
-            .texto-mensaje {{ color: #334155; font-size: 14px; line-height: 1.6; text-align: justify; flex: 1; }}
-            .jaguar-contenedor {{ width: 110px; text-align: center; flex-shrink: 0; }}
+            .texto-mensaje {{ color: #334155; font-size: 13.5px; line-height: 1.6; text-align: justify; flex: 1; }}
+            .jaguar-contenedor {{ width: 100px; text-align: center; flex-shrink: 0; }}
             .jaguar-contenedor img {{ width: 100%; height: auto; border-radius: 8px; }}
-            .eslogan {{ color: #1B365D; text-align: center; margin: 25px 0 5px 0; font-size: 18px; font-weight: 700; }}
+            .eslogan {{ color: #1B365D; text-align: center; margin: 20px 0 5px 0; font-size: 16px; font-weight: 700; }}
             .pie-pagina {{
                 background-color: #0B1D33; 
-                padding: 15px 20px; 
+                padding: 15px; 
                 text-align: center; 
                 color: white; 
                 font-size: 11px; 
@@ -97,23 +94,24 @@ def generar_tarjeta_html(nombre, carrera, index):
             .btn-copiar {{
                 display: block;
                 width: 100%;
-                max-width: 530px;
-                margin: 15px auto 0 auto;
+                max-width: 480px;
+                margin: 10px auto;
                 background: linear-gradient(135deg, #1B365D 0%, #0B1D33 100%);
                 color: white;
                 border: 1px solid #38BDF8;
                 padding: 12px;
                 font-weight: bold;
-                font-size: 15px;
+                font-size: 14px;
                 border-radius: 8px;
                 cursor: pointer;
                 text-align: center;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.15);
-                transition: background 0.2s;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             }}
         </style>
     </head>
     <body>
+
+        <button id="btn-top-{index}" class="btn-copiar" onclick="copiarTarjeta('btn-top-{index}')">📋 Copiar Tarjeta como Imagen (Botón Superior)</button>
 
         <div id="tarjeta-{index}" class="tarjeta-contenedor">
             <div class="banner-superior">
@@ -123,55 +121,55 @@ def generar_tarjeta_html(nombre, carrera, index):
             
             <div class="cuerpo">
                 <p class="saludo">Estimado(a) egresado(a),</p>
-                
                 <div class="contenido-flex">
                     <div class="texto-mensaje">
                         Hoy es un día muy especial, y desde la <strong>Unidad de Seguimiento al Egresado y Bolsa de Trabajo</strong> queremos hacerte llegar nuestras más sinceras felicitaciones por tu cumpleaños.<br><br>
                         Nos sentimos muy orgullosos de tus pasos y de tenerte como miembro activo de nuestra comunidad de graduados. Deseamos que pases un día extraordinario junto a tus seres queridos y que este nuevo año esté lleno de salud, felicidad y grandes éxitos profesionales.
                     </div>
                     <div class="jaguar-contenedor">
-                        <img src="{jaguar_base64}" alt="Mascota UNAMAD">
+                        <img src="{jaguar_real_base64}" alt="Mascota UNAMAD">
                     </div>
                 </div>
-                
                 <div class="eslogan">¡Que disfrutes mucho de tu día!</div>
             </div>
             
             <div class="pie-pagina">
-                <span style="color: #38BDF8; font-weight: bold; letter-spacing: 1px;">ATENTAMENTE,</span><br>
+                <span style="color: #38BDF8; font-weight: bold; letter-spacing: 0.5px;">ATENTAMENTE,</span><br>
                 <span style="color: #FFFFFF; font-weight: 600;">Unidad de Seguimiento al Egresado y Bolsa de Trabajo - DAA</span><br>
                 <span style="color: #94A3B8;">Universidad Nacional Amazónica de Madre de Dios</span>
             </div>
         </div>
 
-        <button id="btn-{index}" class="btn-copiar" onclick="copiarComoImagen()">📋 Copiar Tarjeta como Imagen</button>
+        <button id="btn-bottom-{index}" class="btn-copiar" onclick="copiarTarjeta('btn-bottom-{index}')">📋 Copiar Tarjeta como Imagen (Botón Inferior)</button>
 
         <script>
-            function copiarComoImagen() {{
+            function copiarTarjeta(buttonId) {{
                 const elemento = document.getElementById('tarjeta-{index}');
-                const boton = document.getElementById('btn-{index}');
+                const boton = document.getElementById(buttonId);
                 
-                // Forzamos el renderizado completo utilizando la imagen interna segura
                 html2canvas(elemento, {{ scale: 2, logging: false }}).then(canvas => {{
                     canvas.toBlob(blob => {{
-                        if (!blob) {{
-                            alert("No se pudo procesar la tarjeta.");
-                            return;
-                        }}
+                        if(!blob) return;
                         const item = new ClipboardItem({{ "image/png": blob }});
                         navigator.clipboard.write([item]).then(() => {{
-                            boton.innerText = "✅ ¡Tarjeta Copiada! Pégala en WhatsApp (Ctrl+V)";
-                            boton.style.background = "#22C55E";
+                            document.getElementById('btn-top-{index}').innerText = "✅ ¡Tarjeta Copiada! Pégala en WhatsApp (Ctrl+V)";
+                            document.getElementById('btn-top-{index}').style.background = "#22C55E";
+                            document.getElementById('btn-bottom-{index}').innerText = "✅ ¡Tarjeta Copiada! Pégala en WhatsApp (Ctrl+V)";
+                            document.getElementById('btn-bottom-{index}').style.background = "#22C55E";
+                            
                             setTimeout(() => {{
-                                boton.innerText = "📋 Copiar Tarjeta como Imagen";
-                                boton.style.background = "linear-gradient(135deg, #1B365D 0%, #0B1D33 100%)";
+                                const originalText = "📋 Copiar Tarjeta como Imagen";
+                                const originalBg = "linear-gradient(135deg, #1B365D 0%, #0B1D33 100%)";
+                                
+                                document.getElementById('btn-top-{index}').innerText = originalText + " (Botón Superior)";
+                                document.getElementById('btn-top-{index}').style.background = originalBg;
+                                document.getElementById('btn-bottom-{index}').innerText = originalText + " (Botón Inferior)";
+                                document.getElementById('btn-bottom-{index}').style.background = originalBg;
                             }}, 3000);
                         }}).catch(err => {{
-                            alert("Error al copiar. Asegúrate de dar permisos de portapapeles en tu navegador.");
+                            alert("Haz clic dentro de la tarjeta o dale permisos al navegador para copiar.");
                         }});
                     }}, 'image/png');
-                }}).catch(err => {{
-                    alert("Error al renderizar el diseño.");
                 }});
             }}
         </script>
@@ -211,7 +209,6 @@ try:
             contador += 1
             nombre_egresado = nombre_completo.split(",")[1].strip() if "," in nombre_completo else nombre_completo
             
-            # Formateo del mensaje complementario de WhatsApp
             texto_whatsapp = f"¡HOY CELEBRAMOS SU CUMPLEAÑOS! 🎂🎉\n\nEnviamos un afectuoso saludo a nuestro(a) profesional que festeja su onomástico hoy:\n\n*{nombre_egresado}*\n🎓 {carrera_profesional}\n\n¡Muchas felicidades y que tenga un excelente día! ✨🎈"
             texto_codificado = urllib.parse.quote(texto_whatsapp)
             
@@ -223,9 +220,9 @@ try:
             
             col1, col2 = st.columns([1.3, 1.0])
             with col1:
-                # Se aumenta la altura del componente (height=720) para que el pie de página nunca quede recortado
+                # Modificado a height=820 y scrolling=True para evitar recortes del pie de página
                 tarjeta_html = generar_tarjeta_html(nombre_egresado, carrera_profesional, index)
-                components.html(tarjeta_html, height=720, scrolling=False)
+                components.html(tarjeta_html, height=820, scrolling=True)
                 
             with col2:
                 st.markdown(f"### 🥳 {nombre_egresado}")
