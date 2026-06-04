@@ -28,7 +28,7 @@ def descargar_datos():
     return pd.read_excel(io.BytesIO(resp.content), header=None, skiprows=1)
 
 def generar_tarjeta_html(nombre, carrera, index):
-    """Genera la estructura de la tarjeta en HTML/CSS e incluye un botón de descarga real a PNG"""
+    """Genera la estructura de la tarjeta en HTML/CSS e incluye el script para copiar como Imagen"""
     url_mascota = "https://docs.google.com/uc?export=download&id=10fW68y7oiTcr-VcPoEW1V-OQ4O3psxup"
     
     html_content = f"""
@@ -54,7 +54,7 @@ def generar_tarjeta_html(nombre, carrera, index):
                 text-align: center; 
                 color: white;
             }}
-            .banner-superior h2 {{ margin: 0; font-size: 22px; font-weight: 700; }}
+            .banner-superior h2 {{ margin: 0; font-size: 21px; font-weight: 700; }}
             .banner-superior p {{ margin: 6px 0 0 0; color: #E2E8F0; font-size: 13px; font-style: italic; }}
             .cuerpo {{ padding: 25px; }}
             .cuerpo .saludo {{ color: #1E293B; font-weight: bold; font-size: 16px; margin-top: 0; }}
@@ -71,7 +71,7 @@ def generar_tarjeta_html(nombre, carrera, index):
                 font-size: 11px; 
                 line-height: 1.4;
             }}
-            .btn-descargar {{
+            .btn-copiar {{
                 display: block;
                 width: 100%;
                 max-width: 500px;
@@ -86,9 +86,9 @@ def generar_tarjeta_html(nombre, carrera, index):
                 cursor: pointer;
                 text-align: center;
                 box-shadow: 0 4px 6px rgba(0,0,0,0.15);
-                transition: transform 0.2s;
+                transition: background 0.2s;
             }}
-            .btn-descargar:hover {{ transform: translateY(-2px); background: #1B365D; }}
+            .btn-copiar:hover {{ background: #1B365D; }}
         </style>
     </head>
     <body>
@@ -107,7 +107,7 @@ def generar_tarjeta_html(nombre, carrera, index):
                         Nos sentimos muy orgullosos de tus pasos y de tenerte como miembro activo de nuestra comunidad de graduados. Deseamos que pases un día extraordinario junto a tus seres queridos y que este nuevo año esté lleno de salud, felicidad y grandes éxitos profesionales.
                     </div>
                     <div class="jaguar-contenedor">
-                        <img src="{url_mascota}" crossorigin="anonymous" alt="Mascota UNAMAD">
+                        <img src="{url_mascota}" alt="Mascota UNAMAD">
                     </div>
                 </div>
                 <div class="eslogan">¡Que disfrutes mucho de tu día!</div>
@@ -120,17 +120,28 @@ def generar_tarjeta_html(nombre, carrera, index):
             </div>
         </div>
 
-        <button class="btn-descargar" onclick="bajarTarjeta()">💾 Descargar Tarjeta PNG</button>
+        <button id="btn-{index}" class="btn-copiar" onclick="copiarTarjeta()">📋 Copiar Tarjeta al Portapapeles</button>
 
         <script>
-            function bajarTarjeta() {{
+            function copiarTarjeta() {{
                 const elemento = document.getElementById('tarjeta-{index}');
-                // html2canvas toma una foto exacta de lo que ve el navegador
-                html2canvas(elemento, {{ useCORS: true, scale: 2 }}).then(canvas => {{
-                    const link = document.createElement('a');
-                    link.download = 'Tarjeta_{nombre.replace(" ", "_")}.png';
-                    link.href = canvas.toDataURL('image/png');
-                    link.click();
+                const boton = document.getElementById('btn-{index}');
+                
+                // Convertimos el HTML visible en una imagen e interactuamos con el portapapeles nativo
+                html2canvas(elemento, {{ scale: 2 }}).then(canvas => {{
+                    canvas.toBlob(blob => {{
+                        const item = new ClipboardItem({{ "image/png": blob }});
+                        navigator.clipboard.write([item]).then(() => {{
+                            boton.innerText = "✅ ¡Copiado! Pégalo en WhatsApp (Ctrl+V)";
+                            boton.style.background = "#22C55E"; // Cambia a verde exitoso
+                            setTimeout(() => {{
+                                boton.innerText = "📋 Copiar Tarjeta al Portapapeles";
+                                boton.style.background = "linear-gradient(135deg, #1B365D 0%, #0B1D33 100%)";
+                            }}, 3000);
+                        }}).catch(err => {{
+                            alert("Error al copiar. Intenta desde una PC o navegador actualizado.");
+                        }});
+                    }}, 'image/png');
                 }});
             }}
         </script>
@@ -170,7 +181,7 @@ try:
             contador += 1
             nombre_egresado = nombre_completo.split(",")[1].strip() if "," in nombre_completo else nombre_completo
             
-            # Formateo de mensaje para WhatsApp
+            # Mensaje para WhatsApp
             texto_whatsapp = f"¡HOY CELEBRAMOS SU CUMPLEAÑOS! 🎂🎉\n\nEnviamos un afectuoso saludo a nuestro(a) profesional que festeja su onomástico hoy:\n\n*{nombre_egresado}*\n🎓 {carrera_profesional}\n\n¡Muchas felicidades y que tenga un excelente día! ✨🎈"
             texto_codificado = urllib.parse.quote(texto_whatsapp)
             
@@ -182,14 +193,14 @@ try:
             
             col1, col2 = st.columns([1.3, 1.0])
             with col1:
-                # SOLUCIÓN CRUCIAL: Se inyecta usando el componente iframe nativo de Streamlit
+                # Renderizado limpio
                 tarjeta_codigo = generar_tarjeta_html(nombre_egresado, carrera_profesional, index)
-                components.html(tarjeta_codigo, height=650, scrolling=False)
+                components.html(tarjeta_codigo, height=660, scrolling=False)
                 
             with col2:
                 st.markdown(f"### 🥳 {nombre_egresado}")
                 st.info(texto_whatsapp)
-                st.markdown(f'<a href="{link_wa}" target="_blank" style="text-decoration:none;"><button style="background-color:#25D366; color:white; border:none; padding:14px 20px; font-weight:bold; border-radius:8px; width:100%; cursor:pointer; font-size:16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.3s;">💬 Enviar por WhatsApp</button></a>', unsafe_allow_html=True)
+                st.markdown(f'<a href="{link_wa}" target="_blank" style="text-decoration:none;"><button style="background-color:#25D366; color:white; border:none; padding:14px 20px; font-weight:bold; border-radius:8px; width:100%; cursor:pointer; font-size:16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">💬 Abrir Chat de WhatsApp</button></a>', unsafe_allow_html=True)
             st.markdown("---")
             
     if contador == 0:
