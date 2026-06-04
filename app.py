@@ -184,7 +184,7 @@ try:
         try:
             nombre_completo = str(fila[3]).strip()       
             carrera_profesional = str(fila[4]).strip()   
-            sexo_celda = str(fila[5]).strip().upper()  # <-- Lee la columna de Sexo (ajusta el índice si varía)
+            sexo_celda = str(fila[42]).strip().upper()  # <-- Columna AQ mapeada (Índice 42)
             fecha_celda = str(fila[43]).strip()          
             celular_celda = str(fila[7]).strip().replace(".0", "").replace(" ", "")
         except:
@@ -208,7 +208,7 @@ try:
             nombre_egresado = nombre_egresado.replace("da", "día").replace("Cumpleaos", "Cumpleaños")
             carrera_profesional = carrera_profesional.strip()
 
-            # Lógica de personalización por género
+            # Lógica adaptada según el género de la columna AQ
             if sexo_celda == "M" or sexo_celda == "MASCULINO":
                 titulo_egresado = "Egresado"
                 saludo_inicial = "Estimado egresado"
@@ -218,7 +218,6 @@ try:
                 saludo_inicial = "Estimada egresada"
                 art_saludo = "nuestra profesional"
             else:
-                # Caso de respaldo si la celda no tiene datos válidos
                 titulo_egresado = "Egresado(a)"
                 saludo_inicial = "Estimado(a) egresado(a)"
                 art_saludo = "nuestro(a) profesional"
