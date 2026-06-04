@@ -38,24 +38,44 @@ st.markdown("""
         box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
     }
     
-    /* Estilos personalizados para los botones nativos de Streamlit */
-    div.stButton > button:first-child {
+    /* Botón personalizado nativo HTML para abrir WhatsApp sin bloqueos */
+    .btn-whatsapp-nativo {
+        display: block;
+        text-align: center;
         background-color: #25D366;
-        color: white;
-        border: none;
+        color: white !important;
         padding: 12px 24px;
         font-weight: 700;
         font-size: 16px;
         border-radius: 10px;
-        width: 100%;
+        text-decoration: none;
         box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
         transition: all 0.2s ease;
-    }
-    div.stButton > button:first-child:hover {
-        background-color: #20BA56;
         border: none;
-        color: white;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .btn-whatsapp-nativo:hover {
+        background-color: #20BA56;
         transform: translateY(-1px);
+        box-shadow: 0 6px 14px rgba(37, 211, 102, 0.4);
+    }
+    
+    /* Botón de estado inactivo estilo Streamlit */
+    .btn-deshabilitado {
+        display: block;
+        text-align: center;
+        background-color: #F1F5F9;
+        color: #94A3B8 !important;
+        padding: 12px 24px;
+        font-weight: 700;
+        font-size: 16px;
+        border-radius: 10px;
+        text-decoration: none;
+        border: 1px solid #E2E8F0;
+        width: 100%;
+        box-sizing: border-box;
+        cursor: not-allowed;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -288,7 +308,7 @@ try:
             nombre_egresado = nombre_completo.split(",")[1].strip() if "," in nombre_completo else nombre_completo
             nombre_egresado = nombre_egresado.replace("da", "día").replace("Cumpleaos", "Cumpleaños")
 
-            # SOLUCIÓN: El id de control ahora incluye el índice numérico exacto de su fila en el Excel
+            # ID de control independiente por fila
             id_unico_egresado = f"{nombre_egresado}_{dia_buscado}_{index}"
 
             # Definición de diccionarios de color por género
@@ -353,18 +373,19 @@ try:
                 ya_enviado = id_unico_egresado in st.session_state.egresados_saludados
                 
                 if ya_enviado:
-                    st.button(f"✅ Saludo registrado para {nombre_egresado}", key=f"btn_success_{index}", disabled=True)
+                    st.markdown(f'<a class="btn-deshabilitado">✅ Saludo registrado para {nombre_egresado}</a>', unsafe_allow_html=True)
                 else:
-                    if st.button(f"💬 Enviar por WhatsApp", key=f"btn_action_{index}"):
-                        st.session_state.egresados_saludados.add(id_unico_egresado)
-                        st.session_state.registro_envios[dia_buscado] += 1
+                    # Formulario fantasma para simular la persistencia y sumar al contador al hacer clic
+                    with st.form(key=f"form_{id_unico_egresado}", border=False):
+                        # Link HTML nativo seguro (El navegador NUNCA bloqueará este método de apertura de enlaces)
+                        st.markdown(f'<a href="{link_wa}" target="_blank" class="btn-whatsapp-nativo">💬 Enviar por WhatsApp</a>', unsafe_allow_html=True)
                         
-                        components.html(f"""
-                            <script>
-                                window.open("{link_wa}", "_blank");
-                            </script>
-                        """, height=0)
-                        st.rerun()
+                        # Botón secundario discreto para marcar manualmente que ya se envió
+                        st.markdown("<div style='margin-top: 8px;'></div>", unsafe_allow_html=True)
+                        if st.form_submit_button("📌 Marcar como enviado e incrementar contador"):
+                            st.session_state.egresados_saludados.add(id_unico_egresado)
+                            st.session_state.registro_envios[dia_buscado] += 1
+                            st.rerun()
 
             st.markdown('</div>', unsafe_allow_html=True)
             
