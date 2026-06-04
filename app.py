@@ -185,7 +185,7 @@ try:
     
     jaguar_src = obtener_jaguar_base64()
     
-    # Mostrar KPI de control en la parte superior
+    # Mostrar bloques de métricas arriba bien presentados
     col_kpi1, col_kpi2 = st.columns(2)
     with col_kpi1:
         st.metric(label="📅 Fecha Analizada", value=dia_buscado)
@@ -199,7 +199,7 @@ try:
         try:
             nombre_completo = str(fila[3]).strip()       
             carrera_profesional = str(fila[4]).strip()   
-            sexo_celda = str(fila[42]).strip().upper()  # Columna AQ (Índice 42)
+            sexo_celda = str(fila[42]).strip().upper()  # Columna AQ
             fecha_celda = str(fila[43]).strip()          
             celular_celda = str(fila[7]).strip().replace(".0", "").replace(" ", "")
         except:
@@ -255,11 +255,22 @@ try:
                 st.markdown(f"### 🥳 {nombre_egresado}")
                 st.info(texto_whatsapp)
                 
-                # Botón con manejador nativo de Streamlit para aumentar el contador antes de abrir el enlace externo
-                if st.button(f"💬 Enviar por WhatsApp a {nombre_egresado}", key=f"btn_wa_{index}"):
+                # El botón HTML original que NUNCA falla ni bloquea el navegador
+                st.markdown(f'<a href="{link_wa}" target="_blank" style="text-decoration:none;"><button style="background-color:#25D366; color:white; border:none; padding:14px 20px; font-weight:bold; border-radius:8px; width:100%; cursor:pointer; font-size:16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">💬 Enviar por WhatsApp</button></a>', unsafe_allow_html=True)
+                
+                st.write("")
+                # Casilla manual para registrar que se envió con éxito sin interrumpir el flujo
+                marcar_enviado = st.checkbox("Márcalo aquí si ya enviaste este saludo", key=f"chk_{index}")
+                
+                # Manejo del estado interno del check
+                key_estado = f"estado_chk_{index}"
+                if marcar_enviado and not st.session_state.get(key_estado, False):
+                    st.session_state[key_estado] = True
                     st.session_state.registro_envios[dia_buscado] += 1
-                    # Script JS abre la pestaña de WhatsApp inmediatamente al actualizar la interfaz
-                    st.components.v1.html(f"""<script>window.open("{link_wa}", "_blank");</script>""", height=0)
+                    st.rerun()
+                elif not marcar_enviado and st.session_state.get(key_estado, False):
+                    st.session_state[key_estado] = False
+                    st.session_state.registro_envios[dia_buscado] = max(0, st.session_state.registro_envios[dia_buscado] - 1)
                     st.rerun()
 
             st.markdown("---")
