@@ -3,7 +3,6 @@ import pandas as pd
 import requests
 from datetime import datetime
 import urllib.parse
-from PIL import Image, ImageDraw, ImageFont
 import io
 
 # Configuración estética de la página web
@@ -26,94 +25,6 @@ def descargar_datos():
         url_descarga = url_google_sheets
     resp = requests.get(url_descarga)
     return pd.read_excel(io.BytesIO(resp.content), header=None, skiprows=1)
-
-def generar_imagen_tarjeta(nombre, carrera, es_varon):
-    # Dimensiones exactas para el diseño HD original
-    ancho, alto = 1200, 1050
-    img = Image.new('RGB', (ancho, alto), color='#F8FAFC')
-    draw = ImageDraw.Draw(img)
-    
-    # Paleta de colores exacta de tu diseño original
-    color_cabecera = "#1B365D"
-    color_pie = "#0B1D33"
-    
-    # Dibujar franjas (Cabecera y Pie)
-    draw.rectangle([0, 0, ancho, 220], fill=color_cabecera)
-    draw.rectangle([0, alto-160, ancho, alto], fill=color_pie)
-    
-    # Carga de fuentes segura y compatible con Linux Streamlit (Grande y Elegante)
-    try:
-        font_titulo = ImageFont.truetype("LiberationSans-Bold.ttf", 46)
-        font_sub = ImageFont.truetype("LiberationSans-Regular.ttf", 26)
-        font_cuerpo_bold = ImageFont.truetype("LiberationSans-Bold.ttf", 32)
-        font_cuerpo_reg = ImageFont.truetype("LiberationSans-Regular.ttf", 30)
-        font_pie_bold = ImageFont.truetype("LiberationSans-Bold.ttf", 24)
-        font_pie_reg = ImageFont.truetype("LiberationSans-Regular.ttf", 22)
-    except:
-        font_titulo = font_sub = font_cuerpo_bold = font_cuerpo_reg = font_pie_bold = font_pie_reg = ImageFont.load_default()
-
-    # --- TEXTOS DE LA CABECERA (Centrados perfectamente) ---
-    texto_titulo = f"¡Feliz Cumpleaños, {nombre}! 🎂🎉"
-    w_t = draw.textlength(texto_titulo, font=font_titulo)
-    draw.text(((ancho - w_t) / 2, 50), texto_titulo, fill="#FFFFFF", font=font_titulo)
-    
-    texto_sub = f"Egresado(a) de la Carrera Profesional de {carrera.upper()}"
-    w_s = draw.textlength(texto_sub, font=font_sub)
-    draw.text(((ancho - w_s) / 2, 135), texto_sub, fill="#E2E8F0", font=font_sub)
-    
-    # --- TEXTO DEL CUERPO (Alineado a la izquierda con margen) ---
-    draw.text((70, 290), "Estimado(a) egresado(a),", fill="#1E293B", font=font_cuerpo_bold)
-    
-    # Párrafo principal estructurado línea por línea
-    draw.text((70, 370), "Hoy es un día muy especial, y desde la ", fill="#334155", font=font_cuerpo_reg)
-    w_p1 = draw.textlength("Hoy es un día muy especial, y desde la ", font=font_cuerpo_reg)
-    draw.text((70 + w_p1, 370), "Unidad de", fill="#1E293B", font=font_cuerpo_bold)
-    
-    draw.text((70, 420), "Seguimiento al Egresado y Bolsa de Trabajo", fill="#1E293B", font=font_cuerpo_bold)
-    w_p2 = draw.textlength("Seguimiento al Egresado y Bolsa de Trabajo ", font=font_cuerpo_bold)
-    draw.text((70 + w_p2, 420), "queremos", fill="#334155", font=font_cuerpo_reg)
-    
-    draw.text((70, 470), "hacerte llegar nuestras más sinceras felicitaciones por tu", fill="#334155", font=font_cuerpo_reg)
-    draw.text((70, 520), "cumpleaños.", fill="#334155", font=font_cuerpo_reg)
-    
-    draw.text((70, 610), "Nos sentimos muy orgullosos de tus pasos y de tenerte como miembro activo de", fill="#334155", font=font_cuerpo_reg)
-    draw.text((70, 660), "nuestra comunidad de graduados. Deseamos que pases un día extraordinario", fill="#334155", font=font_cuerpo_reg)
-    draw.text((70, 710), "junto a tus seres queridos y que este nuevo año esté lleno de salud, felicidad y", fill="#334155", font=font_cuerpo_reg)
-    draw.text((70, 760), "grandes éxitos profesionales.", fill="#334155", font=font_cuerpo_reg)
-    
-    # --- MENSAJE FINAL DESTACADO (Centrado) ---
-    texto_disfruta = "¡Que disfrutes mucho de tu día!"
-    w_d = draw.textlength(texto_disfruta, font=font_cuerpo_bold)
-    draw.text(((ancho - w_d) / 2, 840), texto_disfruta, fill="#1B365D", font=font_cuerpo_bold)
-    
-    # --- PIE DE PÁGINA (Centrado) ---
-    txt_atentamente = "ATENTAMENTE,"
-    w_a = draw.textlength(txt_atentamente, font=font_pie_bold)
-    draw.text(((ancho - w_a) / 2, alto - 130), txt_atentamente, fill="#38BDF8", font=font_pie_bold)
-    
-    txt_unidad = "Unidad de Seguimiento al Egresado y Bolsa de Trabajo - DAA"
-    w_u = draw.textlength(txt_unidad, font=font_pie_bold)
-    draw.text(((ancho - w_u) / 2, alto - 95), txt_unidad, fill="#FFFFFF", font=font_pie_bold)
-    
-    txt_uni = "Universidad Nacional Amazónica de Madre de Dios"
-    w_uni = draw.textlength(txt_uni, font=font_pie_reg)
-    draw.text(((ancho - w_uni) / 2, alto - 55), txt_uni, fill="#CBD5E1", font=font_pie_reg)
-    
-    # --- INTENTAR CARGAR LA MASCOTA DESDE REPOSITORIO EXTERNO ---
-    try:
-        # Usamos la imagen oficial de tu jaguar cargada de manera segura
-        url_mascota = "https://raw.githubusercontent.com/scondorif-cmd/saludos-profesionales/principal/mascota.png"
-        res_mascota = requests.get(url_mascota, timeout=5)
-        if res_mascota.status_code == 200:
-            img_mascota = Image.open(io.BytesIO(res_mascota.content)).convert("RGBA")
-            img_mascota = img_mascota.resize((260, 260))  # Tamaño proporcional original
-            img.paste(img_mascota, (870, 270), img_mascota) # Posición lateral derecha exacta
-    except:
-        pass # Si no existe o no conecta, la tarjeta se genera limpia sin romperse
-        
-    img_ram = io.BytesIO()
-    img.save(img_ram, format='PNG')
-    return img_ram.getvalue()
 
 try:
     df = descargar_datos()
@@ -146,8 +57,8 @@ try:
         if fecha_texto == dia_buscado:
             contador += 1
             nombre_egresado = nombre_completo.split(",")[1].strip() if "," in nombre_completo else nombre_completo
-            es_varon = sexo_celda in ["M", "MASCULINO", "VARON", "VARÓN"]
             
+            # Formatear texto para WhatsApp
             texto_whatsapp = f"¡HOY CELEBRAMOS SU CUMPLEAÑOS! 🎂🎉\n\nEnviamos un afectuoso saludo a nuestro(a) profesional que festeja su onomástico hoy:\n\n*{nombre_egresado}*\n🎓 {carrera_profesional}\n\n¡Muchas felicidades y que tenga un excelente día! ✨🎈"
             texto_codificado = urllib.parse.quote(texto_whatsapp)
             
@@ -157,17 +68,49 @@ try:
                 
             link_wa = f"https://api.whatsapp.com/send?phone={num_limpio}&text={texto_codificado}" if num_limpio and num_limpio != "nan" else f"https://api.whatsapp.com/send?text={texto_codificado}"
             
-            datos_imagen = generar_imagen_tarjeta(nombre_egresado, carrera_profesional, es_varon)
+            # --- DISEÑO DIGITAL EN HTML (Con enlace directo a tu imagen de Drive) ---
+            html_tarjeta = f"""
+            <div style="background-color: #F8FAFC; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 100%; max-width: 600px; font-family: 'Segoe UI', Arial, sans-serif; overflow: hidden; margin: 15px auto; border: 1px solid #E2E8F0;">
+                <div style="background-color: #1B365D; padding: 30px 20px; text-align: center;">
+                    <h2 style="color: #FFFFFF; margin: 0; font-size: 24px; font-weight: 700; line-height: 1.3;">¡Feliz Cumpleaños, {nombre_egresado}! 🎂🎉</h2>
+                    <p style="color: #E2E8F0; margin: 10px 0 0 0; font-size: 14px; font-weight: 400;">Egresado(a) de la Carrera Profesional de {carrera_profesional.upper()}</p>
+                </div>
+                
+                <div style="padding: 25px 25px; background-color: #FFFFFF;">
+                    <div style="float: right; margin-left: 15px; margin-bottom: 10px; width: 130px;">
+                        <img src="https://lh3.googleusercontent.com/d/10fW68y7oiTcr-VcPoEW1V-OQ4O3psxup" style="width: 100%; height: auto; display: block;" alt="Mascota UNAMAD">
+                    </div>
+                    
+                    <p style="color: #1E293B; font-weight: 700; font-size: 16px; margin: 0 0 12px 0;">Estimado(a) egresado(a),</p>
+                    
+                    <p style="color: #334155; font-size: 14.5px; line-height: 1.6; margin: 0 0 14px 0; text-align: justify;">
+                        Hoy es un día muy especial, y desde la <strong>Unidad de Seguimiento al Egresado y Bolsa de Trabajo</strong> queremos hacerte llegar nuestras más sinceras felicitaciones por tu cumpleaños.
+                    </p>
+                    
+                    <p style="color: #334155; font-size: 14.5px; line-height: 1.6; margin: 0 0 15px 0; text-align: justify;">
+                        Nos sentimos muy orgullosos de tus pasos y de tenerte como miembro activo de nuestra comunidad de graduados. Deseamos que pases un día extraordinario junto a tus seres queridos y que este nuevo año esté lleno de salud, felicidad y grandes éxitos profesionales.
+                    </p>
+                    
+                    <div style="clear: both;"></div>
+                    
+                    <h4 style="color: #1B365D; text-align: center; font-size: 18px; font-weight: 700; margin: 20px 0 5px 0;">¡Que disfrutes mucho de tu día!</h4>
+                </div>
+                
+                <div style="background-color: #0B1D33; padding: 20px; text-align: center; color: #FFFFFF; font-size: 12px; line-height: 1.5;">
+                    <span style="color: #38BDF8; font-weight: 700; letter-spacing: 1px; display: block; margin-bottom: 5px;">ATENTAMENTE,</span>
+                    <strong style="display: block; font-size: 13px; color: #FFFFFF;">Unidad de Seguimiento al Egresado y Bolsa de Trabajo - DAA</strong>
+                    <span style="color: #CBD5E1; display: block; margin-top: 3px;">Universidad Nacional Amazónica de Madre de Dios</span>
+                </div>
+            </div>
+            """
             
             with st.container():
-                col1, col2 = st.columns([1.3, 1.2])
-                with col1:
-                    st.image(datos_imagen, use_container_width=True)
-                    st.download_button(label="💾 Guardar Imagen", data=datos_imagen, file_name=f"Tarjeta_{nombre_egresado.replace(' ', '_')}.png", mime="image/png", key=f"dl_{index}")
-                with col2:
-                    st.markdown(f"## 🥳 {nombre_egresado}")
-                    st.info(texto_whatsapp)
-                    st.markdown(f'<a href="{link_wa}" target="_blank" style="text-decoration:none;"><button style="background-color:#25D366; color:white; border:none; padding:12px 20px; font-weight:bold; border-radius:8px; width:100%; cursor:pointer; font-size:16px;">💬 Enviar por WhatsApp</button></a>', unsafe_allow_html=True)
+                # Renderizado limpio
+                st.components.v1.html(html_tarjeta, height=570, scrolling=False)
+                st.caption(f"💡 *Sugerencia: Haz una captura a la tarjeta de {nombre_egresado} para guardarla en alta definición.*")
+                
+                # Botón de WhatsApp estilizado
+                st.markdown(f'<a href="{link_wa}" target="_blank" style="text-decoration:none;"><button style="background-color:#25D366; color:white; border:none; padding:12px 20px; font-weight:bold; border-radius:8px; width:100%; max-width:600px; margin:10px auto; display:block; cursor:pointer; font-size:16px;">💬 Enviar por WhatsApp a {nombre_egresado}</button></a>', unsafe_allow_html=True)
             st.markdown("---")
             
     if contador == 0:
