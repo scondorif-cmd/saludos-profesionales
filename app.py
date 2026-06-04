@@ -16,7 +16,7 @@ st.write("Control y envío de saludos para egresados desde la nube (PC o Celular
 fecha_seleccionada = st.date_input("Selecciona la fecha a procesar:", datetime.now())
 dia_buscado = fecha_seleccionada.strftime("%d/%m")
 
-# TU ENLACE REAL Y CORRECTO
+# Enlace de tu Google Sheets real
 url_google_sheets = "https://docs.google.com/spreadsheets/d/1ScZqatCGsyBUAOQBTdwkTxfOoZNlRfuTD5bhy_iRCao/edit?usp=sharing"
 
 def descargar_datos():
@@ -26,6 +26,24 @@ def descargar_datos():
         url_descarga = url_google_sheets
     resp = requests.get(url_descarga)
     return pd.read_excel(io.BytesIO(resp.content), header=None, skiprows=1)
+
+# FUNCIÓN CRÍTICA: Descarga fuentes reales desde internet para evitar los cuadros ""
+@st.cache_data
+def descargar_fuentes():
+    try:
+        # Descargamos Roboto Bold para los títulos
+        url_bold = "https://github.com/google/fonts/raw/main/apache/roboto/static/Roboto-Bold.ttf"
+        r_bold = requests.get(url_bold)
+        f_bold = io.BytesIO(r_bold.content)
+        
+        # Descargamos Roboto Regular para el cuerpo del texto
+        url_reg = "https://github.com/google/fonts/raw/main/apache/roboto/static/Roboto-Regular.ttf"
+        r_reg = requests.get(url_reg)
+        f_reg = io.BytesIO(r_reg.content)
+        
+        return f_bold, f_reg
+    except:
+        return None, None
 
 def generar_imagen_tarjeta(nombre, carrera, es_varon):
     ancho, alto = 1200, 850
@@ -38,21 +56,25 @@ def generar_imagen_tarjeta(nombre, carrera, es_varon):
     draw.rectangle([0, 0, ancho, 180], fill=color_cabecera)
     draw.rectangle([0, alto-100, ancho, alto], fill=color_pie)
     
-    # Intentar usar fuentes compatibles con Linux en la nube para evitar símbolos rotos
-    try:
-        font_titulo = ImageFont.truetype("DejaVuSans-Bold.ttf", 44)
-        font_sub = ImageFont.truetype("DejaVuSans.ttf", 26)
-        font_cuerpo = ImageFont.truetype("DejaVuSans.ttf", 30)
-        font_pie = ImageFont.truetype("DejaVuSans-Bold.ttf", 22)
-    except IOError:
+    # Obtener las fuentes descargadas de internet
+    f_bold, f_reg = descargar_fuentes()
+    
+    if f_bold and f_reg:
+        # Si se descargaron con éxito, las aplicamos con tamaños grandes y legibles
+        font_titulo = ImageFont.truetype(f_bold, 42)
+        font_sub = ImageFont.truetype(f_reg, 26)
+        font_cuerpo = ImageFont.truetype(f_reg, 30)
+        font_pie = ImageFont.truetype(f_bold, 22)
+    else:
+        # Si falla internet por algún motivo, usa la de fábrica del servidor
         font_titulo = font_sub = font_cuerpo = font_pie = ImageFont.load_default()
     
-    # Textos dentro de la tarjeta con soporte de tildes
+    # Textos dentro de la tarjeta usando codificación UTF-8 pura
     draw.text((50, 40), f"¡Feliz Cumpleaños, {nombre}!", fill="white", font=font_titulo)
     draw.text((50, 110), f"Egresado(a) de {carrera}", fill="#e2e8f0", font=font_sub)
     
     cuerpo_texto = (
-        f"Estimado(a) egresado(a),\n\n"
+        f"Estimado(a) egresado(a) o profesional,\n\n"
         f"Hoy es un día muy especial, y desde la Unidad de Seguimiento al\n"
         f"Egresado y Bolsa de Trabajo queremos hacerte llegar nuestras más\n"
         f"sinceras felicitaciones por tu cumpleaños.\n\n"
@@ -114,14 +136,14 @@ try:
             datos_imagen = generar_imagen_tarjeta(nombre_egresado, carrera_profesional, es_varon)
             
             with st.container():
-                col1, col2 = st.columns([1.2, 1.5])
+                col1, col2 = st.columns([1.3, 1.5])
                 with col1:
                     st.image(datos_imagen, use_container_width=True)
                     st.download_button(label="💾 Guardar Imagen", data=datos_imagen, file_name=f"Tarjeta_{nombre_egresado.replace(' ', '_')}.png", mime="image/png", key=f"dl_{index}")
                 with col2:
                     st.markdown(f"### {nombre_egresado}")
                     st.info(texto_whatsapp)
-                    st.markdown(f'<a href="{link_wa}" target="_blank" style="text-decoration:none;"><button style="background-color:#25D366; color:white; border:none; padding:12px 20px; font-weight:bold; border-radius:8px; width:100%; cursor:pointer;">💬 Enviar por WhatsApp</button></a>', unsafe_allow_html=True)
+                    st.markdown(f'<a href="{link_wa}" target="_blank" style="text-decoration:none;"><button style="background-color:#25D366; color:white; border:none; padding:12px 20px; font-weight:bold; border-radius:8px; width:100%; cursor:pointer;">💬 Enviar por WhatsApp</button></a>', unsafe_allow_True=True)
             st.markdown("---")
             
     if contador == 0:
