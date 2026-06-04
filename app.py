@@ -4,6 +4,7 @@ import requests
 from datetime import datetime
 import urllib.parse
 import io
+import os
 from PIL import Image, ImageDraw, ImageFont
 
 # Configuración de la plataforma
@@ -27,11 +28,27 @@ def descargar_datos():
     resp = requests.get(url_descarga)
     return pd.read_excel(io.BytesIO(resp.content), header=None, skiprows=1)
 
-def cargar_fuente_remota(url, tamano):
-    """Descarga fuentes reales TTF de internet para evitar letras pequeñas o distorsionadas en el servidor"""
+def conseguir_fuente_servidor(es_bold, tamano):
+    """Busca las fuentes nativas de Linux en el servidor para garantizar un grosor Arial idéntico"""
+    rutas_bold = [
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "sans-serif"
+    ]
+    rutas_regular = [
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "sans-serif"
+    ]
+    
+    rutas_a_probar = rutas_bold if es_bold else rutas_regular
+    for ruta in rutas_a_probar:
+        if os.path.exists(ruta):
+            return ImageFont.truetype(ruta, tamano)
+            
+    # Si falla, intenta cargar por nombre directo en el sistema
     try:
-        respuesta = requests.get(url, timeout=5)
-        return ImageFont.truetype(io.BytesIO(respuesta.content), tamano)
+        return ImageFont.truetype("LiberationSans-Bold.ttf" if es_bold else "LiberationSans-Regular.ttf", tamano)
     except:
         return ImageFont.load_default()
 
@@ -41,52 +58,50 @@ def crear_tarjeta_perfecta(nombre, carrera):
     imagen = Image.new("RGB", (ancho, alto), "#FFFFFF")
     draw = ImageDraw.Draw(imagen)
     
-    # Enlaces a fuentes Arial / Roboto equivalentes de alta calidad (Bold y Regular)
-    url_bold = "https://github.com/google/fonts/raw/main/apache/roboto/static/Roboto-Bold.ttf"
-    url_regular = "https://github.com/google/fonts/raw/main/apache/roboto/static/Roboto-Regular.ttf"
-    
-    # === TAMAÑOS CORREGIDOS (Mucho más grandes para que coincidan con el original) ===
-    f_titulo = cargar_fuente_remota(url_bold, 30)         # Título principal
-    f_subtitulo = cargar_fuente_remota(url_regular, 16)   # Subtítulo de carrera
-    f_cuerpo_bold = cargar_fuente_remota(url_bold, 22)   # "Estimado(a) egresado(a),"
-    f_cuerpo = cargar_fuente_remota(url_regular, 20)      # Texto del mensaje
-    f_eslogan = cargar_fuente_remota(url_bold, 24)       # "¡Que disfrutes mucho de tu día!"
-    f_pie_tit = cargar_fuente_remota(url_bold, 14)       # "ATENTAMENTE,"
-    f_pie_sub = cargar_fuente_remota(url_bold, 16)       # Nombre de la Unidad
-    f_pie_univ = cargar_fuente_remota(url_regular, 14)   # Nombre de la Universidad
+    # === TAMAÑOS MÁXIMOS Y ULTRA GRUESOS (Alineado con Tarjeta_SHANIRA.png) ===
+    f_titulo = conseguir_fuente_servidor(True, 38)        # Título arriba gigante
+    f_subtitulo = conseguir_fuente_servidor(False, 16)    # Carrera profesional
+    f_cuerpo_bold = conseguir_fuente_servidor(True, 26)   # "Estimado(a) egresado(a),"
+    f_cuerpo = conseguir_fuente_servidor(False, 23)      # Texto completo del cuerpo
+    f_eslogan = conseguir_fuente_servidor(True, 30)       # "¡Que disfrutes mucho de tu día!"
+    f_pie_tit = conseguir_fuente_servidor(True, 15)       # "ATENTAMENTE,"
+    f_pie_sub = conseguir_fuente_servidor(True, 18)       # Unidad de seguimiento
+    f_pie_univ = conseguir_fuente_servidor(False, 15)     # Universidad
 
     # 1. Encabezado Azul Institucional
-    draw.rectangle([0, 0, ancho, 145], fill="#1B365D")
-    draw.text((ancho // 2, 45), f"¡Feliz Cumpleaños, {nombre.upper()}!", fill="#FFFFFF", font=f_titulo, anchor="mm")
-    draw.text((ancho // 2, 95), f"Egresado(a) de la Carrera Profesional de {carrera.upper()}", fill="#E2E8F0", font=f_subtitulo, anchor="mm")
+    draw.rectangle([0, 0, ancho, 155], fill="#1B365D")
+    draw.text((ancho // 2, 50), f"¡Feliz Cumpleaños, {nombre.upper()}!", fill="#FFFFFF", font=f_titulo, anchor="mm")
+    draw.text((ancho // 2, 105), f"Egresado(a) de la Carrera Profesional de {carrera.upper()}", fill="#E2E8F0", font=f_subtitulo, anchor="mm")
     
-    # 2. Bloque de Texto del Cuerpo (Letras grandes con interlineado ancho de 38 píxeles)
-    draw.text((50, 195), "Estimado(a) egresado(a),", fill="#1E293B", font=f_cuerpo_bold)
+    # 2. Bloque de Texto del Cuerpo (Letras gigantes con interlineado perfecto de 42px)
+    draw.text((45, 210), "Estimado(a) egresado(a),", fill="#1E293B", font=f_cuerpo_bold)
     
     lineas = [
-        "Hoy es un día muy especial, y desde la Unidad de Seguimiento al",
-        "Egresado y Bolsa de Trabajo queremos hacerte llegar nuestras más",
-        "sinceras felicitaciones por tu cumpleaños.",
+        "Hoy es un día muy especial, y desde la Unidad de",
+        "Seguimiento al Egresado y Bolsa de Trabajo queremos",
+        "hacerte llegar nuestras más sinceras felicitaciones por tu",
+        "cumpleaños.",
         "",
-        "Nos sentimos muy orgullosos de tus pasos y de tenerte como miembro activo",
-        "de nuestra comunidad de graduados. Deseamos que pases un día",
-        "extraordinario junto a tus seres queridos y que este nuevo año esté lleno",
-        "de salud, felicidad y grandes éxitos profesionales."
+        "Nos sentimos muy orgullosos de tus pasos y de tenerte como",
+        "miembro activo de nuestra comunidad de graduados. Deseamos",
+        "que pases un día extraordinario junto a tus seres queridos y que",
+        "este nuevo año esté lleno de salud, felicidad y grandes éxitos",
+        "profesionales."
     ]
     
-    y_linea = 245
+    y_linea = 265
     for linea in lineas:
-        draw.text((50, y_linea), linea, fill="#334155", font=f_cuerpo)
-        y_linea += 38  # Interlineado perfecto para texto grande
+        draw.text((45, y_linea), linea, fill="#334155", font=f_cuerpo)
+        y_linea += 39  # Separación generosa para simular el diseño original
         
-    # Mensaje de Cierre destacado
-    draw.text((ancho // 2, 600), "¡Que disfrutes mucho de tu día!", fill="#1B365D", font=f_eslogan, anchor="mm")
+    # Mensaje de Cierre destacado abajo
+    draw.text((ancho // 2, 690), "¡Que disfrutes mucho de tu día!", fill="#1B365D", font=f_eslogan, anchor="mm")
     
-    # 3. Pie de Página Azul Oscuro Estricto
-    draw.rectangle([0, alto - 150, ancho, alto], fill="#0B1D33")
-    draw.text((ancho // 2, alto - 110), "ATENTAMENTE,", fill="#38BDF8", font=f_pie_tit, anchor="mm")
-    draw.text((ancho // 2, alto - 80), "Unidad de Seguimiento al Egresado y Bolsa de Trabajo - DAA", fill="#FFFFFF", font=f_pie_sub, anchor="mm")
-    draw.text((ancho // 2, alto - 50), "Universidad Nacional Amazónica de Madre de Dios", fill="#94A3B8", font=f_pie_univ, anchor="mm")
+    # 3. Pie de Página Azul Oscuro Ampliado
+    draw.rectangle([0, alto - 135, ancho, alto], fill="#0B1D33")
+    draw.text((ancho // 2, alto - 100), "ATENTAMENTE,", fill="#38BDF8", font=f_pie_tit, anchor="mm")
+    draw.text((ancho // 2, alto - 72), "Unidad de Seguimiento al Egresado y Bolsa de Trabajo - DAA", fill="#FFFFFF", font=f_pie_sub, anchor="mm")
+    draw.text((ancho // 2, alto - 42), "Universidad Nacional Amazónica de Madre de Dios", fill="#94A3B8", font=f_pie_univ, anchor="mm")
     
     # 4. Inserción de la Mascota desde Google Drive
     try:
@@ -94,9 +109,8 @@ def crear_tarjeta_perfecta(nombre, carrera):
         url_mascota = f"https://docs.google.com/uc?export=download&id={id_drive}"
         res_img = requests.get(url_mascota, timeout=10)
         img_mascota = Image.open(io.BytesIO(res_img.content)).convert("RGBA")
-        img_mascota = img_mascota.resize((150, 175))
-        # Colocación exacta a la derecha
-        imagen.paste(img_mascota, (540, 185), img_mascota)
+        img_mascota = img_mascota.resize((155, 180)) # Tamaño de mascota idéntico
+        imagen.paste(img_mascota, (540, 210), img_mascota)
     except:
         pass
         
@@ -134,7 +148,7 @@ try:
             nombre_egresado = nombre_completo.split(",")[1].strip() if "," in nombre_completo else nombre_completo
             
             # Mensaje estructurado de WhatsApp
-            texto_whatsapp = f"¡HOY CELEBRAMOS SU CUMPLEAÃ‘OS! 🎂🎉\n\nEnviamos un afectuoso saludo a nuestro(a) profesional que festeja su onomástico hoy:\n\n*{nombre_egresado}*\n🎓 {carrera_profesional}\n\n¡Muchas felicidades y que tenga un excelente día! ✨🎈"
+            texto_whatsapp = f"¡HOY CELEBRAMOS SU CUMPLEAÑOS! 🎂🎉\n\nEnviamos un afectuoso saludo a nuestro(a) profesional que festeja su onomástico hoy:\n\n*{nombre_egresado}*\n🎓 {carrera_profesional}\n\n¡Muchas felicidades y que tenga un excelente día! ✨🎈"
             texto_codificado = urllib.parse.quote(texto_whatsapp)
             
             num_limpio = celular_celda
@@ -143,20 +157,18 @@ try:
                 
             link_wa = f"https://api.whatsapp.com/send?phone={num_limpio}&text={texto_codificado}"
             
-            # Generar el archivo de imagen real procesado por Pillow
+            # Generar la imagen real procesada con fuentes nativas pesadas
             imagen_tarjeta = crear_tarjeta_perfecta(nombre_egresado, carrera_profesional)
             
-            # Conversión binaria limpia para habilitar la descarga nativa
             buf = io.BytesIO()
             imagen_tarjeta.save(buf, format="PNG")
             byte_im = buf.getvalue()
             
-            # Renderizado en dos columnas proporcionales
             col1, col2 = st.columns([1.2, 1.0])
             with col1:
                 st.image(imagen_tarjeta, use_container_width=True, caption=f"Tarjeta Oficial - {nombre_egresado}")
                 
-                # --- BOTÓN DE DESCARGA CON ESTILO PREMIUM ---
+                # --- BOTÓN DE DESCARGA CON ESTILO REFORZADO ---
                 st.download_button(
                     label="💾 Descargar Tarjeta PNG",
                     data=byte_im,
@@ -166,23 +178,24 @@ try:
                     use_container_width=True
                 )
                 
-                # Inyección CSS para cambiar el diseño del botón a uno azul institucional moderno
+                # Estilos CSS inyectados para el botón interactivo
                 st.markdown("""
                     <style>
                     div.stDownloadButton > button {
                         background: linear-gradient(135deg, #1B365D 0%, #0B1D33 100%) !important;
                         color: white !important;
                         border: 1px solid #38BDF8 !important;
-                        padding: 11px 24px !important;
+                        padding: 12px 24px !important;
                         font-weight: bold !important;
                         border-radius: 8px !important;
                         transition: all 0.3s ease !important;
-                        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15) !important;
+                        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2) !important;
+                        font-size: 16px !important;
                     }
                     div.stDownloadButton > button:hover {
                         background: linear-gradient(135deg, #38BDF8 0%, #1B365D 100%) !important;
                         transform: translateY(-2px) !important;
-                        box-shadow: 0 6px 12px rgba(56, 189, 248, 0.3) !important;
+                        box-shadow: 0 6px 12px rgba(56, 189, 248, 0.4) !important;
                     }
                     </style>
                 """, unsafe_allow_html=True)
