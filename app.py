@@ -10,12 +10,13 @@ from PIL import Image, ImageDraw, ImageFont
 st.set_page_config(page_title="Control de Cumpleaños UNAMAD", page_icon="🎓", layout="centered")
 
 st.title("🎓 Sistema de Cumpleaños UNAMAD")
-st.write("Generación automatizada de tarjetas institucionales con descarga en alta calidad.")
+st.write("Control y envío de saludos para egresados desde la nube (PC o Celular).")
 
 # Selector de fecha interactivo
 fecha_seleccionada = st.date_input("Selecciona la fecha a procesar:", datetime.now())
 dia_buscado = fecha_seleccionada.strftime("%d/%m")
 
+# Enlace de tu base de datos en Google Sheets
 url_google_sheets = "https://docs.google.com/spreadsheets/d/1ScZqatCGsyBUAOQBTdwkTxfOoZNlRfuTD5bhy_iRCao/edit?usp=sharing"
 
 def descargar_datos():
@@ -26,37 +27,45 @@ def descargar_datos():
     resp = requests.get(url_descarga)
     return pd.read_excel(io.BytesIO(resp.content), header=None, skiprows=1)
 
-def crear_tarjeta_imagen(nombre, carrera):
-    # Dimensiones de lienzo idénticas a la tarjeta original
+def cargar_fuente_remota(url, tamano):
+    """Descarga una fuente real TTF en memoria para evitar que el servidor distorsione los textos"""
+    try:
+        respuesta = requests.get(url, timeout=5)
+        return ImageFont.truetype(io.BytesIO(respuesta.content), tamano)
+    except:
+        return ImageFont.load_default()
+
+def crear_tarjeta_perfecta(nombre, carrera):
+    # Dimensiones exactas basadas en el diseño original (750 x 850)
     ancho, alto = 750, 850
     imagen = Image.new("RGB", (ancho, alto), "#FFFFFF")
     draw = ImageDraw.Draw(imagen)
     
-    # 1. Encabezado Institucional Azul
-    draw.rectangle([0, 0, ancho, 150], fill="#1B365D")
+    # Servidor de fuentes de Google (Roboto/Arial equivalentes limpias)
+    url_bold = "https://github.com/google/fonts/raw/main/apache/roboto/static/Roboto-Bold.ttf"
+    url_regular = "https://github.com/google/fonts/raw/main/apache/roboto/static/Roboto-Regular.ttf"
     
-    # Fuentes por defecto del sistema seguras para evitar errores de archivo roto ("broken file")
-    try:
-        # Intentamos cargar una fuente estándar del servidor si estuviera disponible
-        f_tit = ImageFont.truetype("LiberationSans-Bold.ttf", 26)
-        f_sub = ImageFont.truetype("LiberationSans-Regular.ttf", 14)
-        f_txt = ImageFont.truetype("LiberationSans-Regular.ttf", 16)
-    except:
-        # Respaldo absoluto para que jamás vuelva a salir "broken file"
-        f_tit = ImageFont.load_default()
-        f_sub = ImageFont.load_default()
-        f_txt = ImageFont.load_default()
+    # Carga de tipografías con tamaños proporcionales para evitar el estiramiento
+    f_titulo = cargar_fuente_remota(url_bold, 28)
+    f_subtitulo = cargar_fuente_remota(url_regular, 15)
+    f_cuerpo_bold = cargar_fuente_remota(url_bold, 18)
+    f_cuerpo = cargar_fuente_remota(url_regular, 17)
+    f_eslogan = cargar_fuente_remota(url_bold, 22)
+    f_pie_tit = cargar_fuente_remota(url_bold, 13)
+    f_pie_sub = cargar_fuente_remota(url_bold, 15)
+    f_pie_univ = cargar_fuente_remota(url_regular, 13)
 
-    # Escribir textos en el encabezado
-    draw.text((ancho // 2, 45), f"¡Feliz Cumpleaños, {nombre.upper()}! 🎂🎉", fill="#FFFFFF", font=f_tit, anchor="mm")
-    draw.text((ancho // 2, 95), f"Egresado(a) de la Carrera Profesional de {carrera.upper()}", fill="#E2E8F0", font=f_sub, anchor="mm")
+    # 1. Encabezado Azul Institucional
+    draw.rectangle([0, 0, ancho, 145], fill="#1B365D")
+    draw.text((ancho // 2, 45), f"¡Feliz Cumpleaños, {nombre.upper()}! 🎂🎉", fill="#FFFFFF", font=f_titulo, anchor="mm")
+    draw.text((ancho // 2, 95), f"Egresado(a) de la Carrera Profesional de {carrera.upper()}", fill="#E2E8F0", font=f_subtitulo, anchor="mm")
     
-    # 2. Textos del Cuerpo (Alineados a la izquierda sobre fondo blanco limpio)
-    draw.text((45, 190), "Estimado(a) egresado(a),", fill="#1E293B", font=f_tit)
+    # 2. Bloque de Texto del Cuerpo (Fondo blanco, tipografía limpia y oscura)
+    draw.text((50, 195), "Estimado(a) egresado(a),", fill="#1E293B", font=f_cuerpo_bold)
     
-    lineas_mensaje = [
+    lineas = [
         "Hoy es un día muy especial, y desde la Unidad de Seguimiento al",
-        "Egresado y Bolsa de Trabajo queremos hacerte llevar nuestras más",
+        "Egresado y Bolsa de Trabajo queremos hacerte llegar nuestras más",
         "sinceras felicitaciones por tu cumpleaños.",
         "",
         "Nos sentimos muy orgullosos de tus pasos y de tenerte como miembro activo",
@@ -65,29 +74,39 @@ def crear_tarjeta_imagen(nombre, carrera):
         "de salud, felicidad y grandes éxitos profesionales."
     ]
     
-    y_lineas = 235
-    for linea in lineas_mensaje:
-        draw.text((45, y_lineas), linea, fill="#334155", font=f_txt)
-        y_lineas += 32
+    y_linea = 245
+    for linea in lineas:
+        draw.text((50, y_linea), linea, fill="#334155", font=f_cuerpo)
+        y_linea += 32
         
-    draw.text((ancho // 2, 580), "¡Que disfrutes mucho de tu día!", fill="#1B365D", font=f_tit, anchor="mm")
+    # Mensaje de Cierre destacado
+    draw.text((ancho // 2, 590), "¡Que disfrutes mucho de tu día!", fill="#1B365D", font=f_eslogan, anchor="mm")
     
-    # 3. Franja Azul Inferior (Pie de página)
-    draw.rectangle([0, alto - 140, ancho, alto], fill="#0B1D33")
-    draw.text((ancho // 2, alto - 105), "ATENTAMENTE,", fill="#38BDF8", font=f_sub, anchor="mm")
-    draw.text((ancho // 2, alto - 75), "Unidad de Seguimiento al Egresado y Bolsa de Trabajo - DAA", fill="#FFFFFF", font=f_sub, anchor="mm")
-    draw.text((ancho // 2, alto - 45), "Universidad Nacional Amazónica de Madre de Dios", fill="#94A3B8", font=f_sub, anchor="mm")
+    # 3. Pie de Página Azul Oscuro Estricto
+    draw.rectangle([0, alto - 150, ancho, alto], fill="#0B1D33")
+    draw.text((ancho // 2, alto - 110), "ATENTAMENTE,", fill="#38BDF8", font=f_pie_tit, anchor="mm")
+    draw.text((ancho // 2, alto - 80), "Unidad de Seguimiento al Egresado y Bolsa de Trabajo - DAA", fill="#FFFFFF", font=f_pie_sub, anchor="mm")
+    draw.text((ancho // 2, alto - 50), "Universidad Nacional Amazónica de Madre de Dios", fill="#94A3B8", font=f_pie_univ, anchor="mm")
     
-    # 4. Inyección de la Mascota sin usar el enlace problemático de Google Drive
+    # 4. Descarga e Inserción de la Mascota desde tu Google Drive
     try:
-        url_mascota = "https://raw.githubusercontent.com/scondorif-cmd/saludos-profesionales/principal/mascota.png"
-        res_img = requests.get(url_mascota, timeout=5)
+        id_drive = "10fW68y7oiTcr-VcPoEW1V-OQ4O3psxup"
+        url_mascota = f"https://docs.google.com/uc?export=download&id={id_drive}"
+        res_img = requests.get(url_mascota, timeout=10)
         img_mascota = Image.open(io.BytesIO(res_img.content)).convert("RGBA")
         img_mascota = img_mascota.resize((150, 175))
-        # Pegar mascota de forma exacta en el espacio blanco superior derecho
-        imagen.paste(img_mascota, (540, 180), img_mascota)
-    except:
-        pass # Evita que se caiga el sistema si el servidor de imágenes falla momentáneamente
+        # Superposición exacta en la zona superior derecha del cuerpo blanco
+        imagen.paste(img_mascota, (540, 185), img_mascota)
+    except Exception as e:
+        # En caso de caída de Drive, usamos el respaldo de GitHub para que no falle la tarjeta
+        try:
+            url_respaldo = "https://raw.githubusercontent.com/scondorif-cmd/saludos-profesionales/principal/mascota.png"
+            res_img = requests.get(url_respaldo, timeout=5)
+            img_mascota = Image.open(io.BytesIO(res_img.content)).convert("RGBA")
+            img_mascota = img_mascota.resize((150, 175))
+            imagen.paste(img_mascota, (540, 185), img_mascota)
+        except:
+            pass
         
     return imagen
 
@@ -122,7 +141,7 @@ try:
             contador += 1
             nombre_egresado = nombre_completo.split(",")[1].strip() if "," in nombre_completo else nombre_completo
             
-            # Texto para WhatsApp
+            # Mensaje estructurado de WhatsApp
             texto_whatsapp = f"¡HOY CELEBRAMOS SU CUMPLEAÑOS! 🎂🎉\n\nEnviamos un afectuoso saludo a nuestro(a) profesional que festeja su onomástico hoy:\n\n*{nombre_egresado}*\n🎓 {carrera_profesional}\n\n¡Muchas felicidades y que tenga un excelente día! ✨🎈"
             texto_codificado = urllib.parse.quote(texto_whatsapp)
             
@@ -132,36 +151,36 @@ try:
                 
             link_wa = f"https://api.whatsapp.com/send?phone={num_limpio}&text={texto_codificado}"
             
-            # Generar la imagen real de la tarjeta
-            imagen_tarjeta = crear_tarjeta_imagen(nombre_egresado, carrera_profesional)
+            # Generar el archivo de imagen real procesado por Pillow
+            imagen_tarjeta = crear_tarjeta_perfecta(nombre_egresado, carrera_profesional)
             
-            # Convertir la imagen final a bytes legibles por el botón de descarga
+            # Conversión binaria limpia para habilitar la descarga nativa
             buf = io.BytesIO()
             imagen_tarjeta.save(buf, format="PNG")
             byte_im = buf.getvalue()
             
+            # Renderizado en dos columnas proporcionales
             col1, col2 = st.columns([1.2, 1.0])
             with col1:
-                # Muestra la imagen generada de forma nativa e idéntica
-                st.image(imagen_tarjeta, use_container_width=True, caption=f"Vista previa de la Tarjeta Oficial de {nombre_egresado}")
+                st.image(imagen_tarjeta, use_container_width=True, caption=f"Tarjeta Lista - {nombre_egresado}")
                 
-                # --- BOTÓN DE DESCARGA DIRECTA FUNCIONAL ---
+                # --- BOTÓN DE DESCARGA DIRECTA OPERATIVO ---
                 st.download_button(
-                    label=f"📥 Descargar Tarjeta PNG Real",
+                    label=f"📥 Descargar Tarjeta Oficial (.png)",
                     data=byte_im,
                     file_name=f"Tarjeta_{nombre_egresado.replace(' ', '_')}.png",
                     mime="image/png",
-                    key=f"btn_descarga_{index}"
+                    key=f"btn_dl_{index}"
                 )
                 
             with col2:
                 st.markdown(f"### 🥳 {nombre_egresado}")
                 st.info(texto_whatsapp)
-                st.markdown(f'<a href="{link_wa}" target="_blank" style="text-decoration:none;"><button style="background-color:#25D366; color:white; border:none; padding:12px 20px; font-weight:bold; border-radius:8px; width:100%; cursor:pointer; font-size:15px;">💬 Enviar por WhatsApp</button></a>', unsafe_allow_html=True)
+                st.markdown(f'<a href="{link_wa}" target="_blank" style="text-decoration:none;"><button style="background-color:#25D366; color:white; border:none; padding:12px 20px; font-weight:bold; border-radius:8px; width:100%; cursor:pointer; font-size:15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">💬 Enviar por WhatsApp</button></a>', unsafe_allow_html=True)
             st.markdown("---")
             
     if contador == 0:
         st.info(f"🎈 No se encontraron cumpleañeros para la fecha seleccionada ({dia_buscado}).")
 
 except Exception as e:
-    st.error(f"Error crítico en el sistema de tarjetas: {e}")
+    st.error(f"Error general del sistema: {e}")
