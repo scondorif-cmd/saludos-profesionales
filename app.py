@@ -38,25 +38,24 @@ st.markdown("""
         box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
     }
     
-    /* Estilos personalizados para los botones de enlace de WhatsApp de Streamlit */
-    div.stLinkButton > a {
-        background-color: #25D366 !important;
-        color: white !important;
-        border: none !important;
-        padding: 12px 24px !important;
-        font-weight: 700 !important;
-        font-size: 16px !important;
-        border-radius: 10px !important;
-        width: 100% !important;
-        text-align: center !important;
-        display: block !important;
-        box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3) !important;
-        transition: all 0.2s ease !important;
-        text-decoration: none !important;
+    /* Estilos personalizados para los botones nativos de Streamlit */
+    div.stButton > button:first-child {
+        background-color: #25D366;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        font-weight: 700;
+        font-size: 16px;
+        border-radius: 10px;
+        width: 100%;
+        box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+        transition: all 0.2s ease;
     }
-    div.stLinkButton > a:hover {
-        background-color: #20BA56 !important;
-        transform: translateY(-1px) !important;
+    div.stButton > button:first-child:hover {
+        background-color: #20BA56;
+        border: none;
+        color: white;
+        transform: translateY(-1px);
     }
     </style>
 """, unsafe_allow_html=True)
@@ -87,7 +86,7 @@ def descargar_datos():
     if "edit" in url_google_sheets:
         url_descarga = url_google_sheets.split('/edit')[0] + '/export?format=xlsx'
     else:
-        url_google_sheets
+        url_descarga = url_google_sheets
     resp = requests.get(url_descarga)
     return pd.read_excel(io.BytesIO(resp.content), header=None, skiprows=1)
 
@@ -243,7 +242,7 @@ try:
     df = descargar_datos()
     jaguar_src = obtener_jaguar_base64()
     
-    # Renderizado estético del cuadro superior de estadísticas
+    # Renderizado del cuadro superior de estadísticas
     st.markdown(f"""
         <div class="panel-metricas">
             <div style="display: flex; justify-content: space-around; text-align: center;">
@@ -289,8 +288,8 @@ try:
             nombre_egresado = nombre_completo.split(",")[1].strip() if "," in nombre_completo else nombre_completo
             nombre_egresado = nombre_egresado.replace("da", "día").replace("Cumpleaos", "Cumpleaños")
 
-            # Identificador único para el control estricto del egresado
-            id_unico_egresado = f"{nombre_egresado}_{dia_buscado}"
+            # SOLUCIÓN: El id de control ahora incluye el índice numérico exacto de su fila en el Excel
+            id_unico_egresado = f"{nombre_egresado}_{dia_buscado}_{index}"
 
             # Definición de diccionarios de color por género
             colores_render = {}
@@ -299,6 +298,7 @@ try:
                 titulo_egresado = "Egresado"
                 saludo_inicial = "Estimado egresado"
                 art_saludo = "nuestro profesional"
+                
                 colores_render = {
                     'banner': 'linear-gradient(135deg, #1B365D 0%, #2A52BE 100%)', 
                     'eslogan': '#1B365D',
@@ -309,6 +309,7 @@ try:
                 titulo_egresado = "Egresada"
                 saludo_inicial = "Estimada egresada"
                 art_saludo = "nuestra profesional"
+                
                 colores_render = {
                     'banner': 'linear-gradient(135deg, #800080 0%, #5A005A 100%)', 
                     'eslogan': '#800080',                                         
@@ -319,6 +320,7 @@ try:
                 titulo_egresado = "Egresado(a)"
                 saludo_inicial = "Estimado(a) egresado(a)"
                 art_saludo = "nuestro(a) profesional"
+                
                 colores_render = {
                     'banner': 'linear-gradient(135deg, #1B365D 0%, #0B1D33 100%)',
                     'eslogan': '#1B365D',
@@ -347,18 +349,21 @@ try:
                 st.markdown(f"<h3 style='margin-top:0; color:#1E293B;'>🥳 {nombre_egresado}</h3>", unsafe_allow_html=True)
                 st.info(texto_whatsapp)
                 
+                # Comprobar si este registro específico ya fue procesado
                 ya_enviado = id_unico_egresado in st.session_state.egresados_saludados
                 
                 if ya_enviado:
-                    st.button(f"✅ Saludo contabilizado para {nombre_egresado}", key=f"btn_success_{index}", disabled=True)
+                    st.button(f"✅ Saludo registrado para {nombre_egresado}", key=f"btn_success_{index}", disabled=True)
                 else:
-                    # Enlace nativo directo que NUNCA se congela
-                    st.link_button("💬 Abrir WhatsApp y Enviar", url=link_wa, use_container_width=True)
-                    
-                    # Botón complementario inmediato para confirmar y sumarlo al panel superior
-                    if st.button("✔️ Confirmar envío realizado para el conteo", key=f"btn_count_{index}"):
+                    if st.button(f"💬 Enviar por WhatsApp", key=f"btn_action_{index}"):
                         st.session_state.egresados_saludados.add(id_unico_egresado)
                         st.session_state.registro_envios[dia_buscado] += 1
+                        
+                        components.html(f"""
+                            <script>
+                                window.open("{link_wa}", "_blank");
+                            </script>
+                        """, height=0)
                         st.rerun()
 
             st.markdown('</div>', unsafe_allow_html=True)
