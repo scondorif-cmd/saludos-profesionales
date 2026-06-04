@@ -38,29 +38,24 @@ st.markdown("""
         box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
     }
     
-    /* Botón de WhatsApp Nativo Adaptado */
-    .btn-whatsapp-html {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
+    /* Estilos personalizados para los botones nativos de Streamlit */
+    div.stButton > button:first-child {
         background-color: #25D366;
-        color: white !important;
+        color: white;
         border: none;
-        padding: 14px 24px;
+        padding: 12px 24px;
         font-weight: 700;
+        font-size: 16px;
         border-radius: 10px;
         width: 100%;
-        cursor: pointer;
-        font-size: 16px;
-        text-decoration: none;
         box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
         transition: all 0.2s ease;
-        text-align: center;
     }
-    .btn-whatsapp-html:hover {
+    div.stButton > button:first-child:hover {
         background-color: #20BA56;
+        border: none;
+        color: white;
         transform: translateY(-1px);
-        box-shadow: 0 6px 16px rgba(37, 211, 102, 0.4);
     }
     </style>
 """, unsafe_allow_html=True)
@@ -68,9 +63,11 @@ st.markdown("""
 st.markdown("<h1>🎓 Sistema de Cumpleaños UNAMAD</h1>", unsafe_allow_html=True)
 st.markdown("<p class='subtitulo-app'>Gestión institucional y envío automatizado de saludos para la comunidad de egresados.</p>", unsafe_allow_html=True)
 
-# Inicializar el contador de envíos en la sesión por cada día si no existe
+# Inicializar el contador de envíos y la lista de control de IDs en la sesión
 if "registro_envios" not in st.session_state:
     st.session_state.registro_envios = {}
+if "egresados_saludados" not in st.session_state:
+    st.session_state.egresados_saludados = set()
 
 # Layout de barra de control principal
 col_control1, col_control2 = st.columns([1, 2])
@@ -290,6 +287,9 @@ try:
             nombre_egresado = nombre_completo.split(",")[1].strip() if "," in nombre_completo else nombre_completo
             nombre_egresado = nombre_egresado.replace("da", "día").replace("Cumpleaos", "Cumpleaños")
 
+            # Identificador único para el control estricto del egresado
+            id_unico_egresado = f"{nombre_egresado}_{dia_buscado}"
+
             # Lógica adaptada según el género de la columna AQ
             if sexo_celda == "M" or sexo_celda == "MASCULINO":
                 titulo_egresado = "Egresado"
@@ -325,22 +325,25 @@ try:
                 st.markdown(f"<h3 style='margin-top:0; color:#1E293B;'>🥳 {nombre_egresado}</h3>", unsafe_allow_html=True)
                 st.info(texto_whatsapp)
                 
-                # Enlace HTML perfectamente diseñado con estilos CSS unificados
-                st.markdown(f'<a href="{link_wa}" target="_blank" class="btn-whatsapp-html">💬 Enviar Mensaje a WhatsApp</a>', unsafe_allow_html=True)
+                # Comprobar si este cumpleañero ya fue procesado hoy
+                ya_enviado = id_unico_egresado in st.session_state.egresados_saludados
                 
-                st.write("")
-                # Casilla manual de confirmación de envío para refrescar estadísticas dinámicas
-                marcar_enviado = st.checkbox("Confirmar registro de envío para estadística diaria", key=f"chk_{index}")
-                
-                key_estado = f"estado_chk_{index}"
-                if marcar_enviado and not st.session_state.get(key_estado, False):
-                    st.session_state[key_estado] = True
-                    st.session_state.registro_envios[dia_buscado] += 1
-                    st.rerun()
-                elif not marcar_enviado and st.session_state.get(key_estado, False):
-                    st.session_state[key_estado] = False
-                    st.session_state.registro_envios[dia_buscado] = max(0, st.session_state.registro_envios[dia_buscado] - 1)
-                    st.rerun()
+                if ya_enviado:
+                    # El botón cambia visualmente indicando éxito y se desactiva para evitar reconteos
+                    st.button(f"✅ Saludo registrado para {nombre_egresado}", key=f"btn_success_{index}", disabled=True)
+                else:
+                    # Botón unificado que ejecuta la suma única y abre WhatsApp
+                    if st.button(f"💬 Enviar por WhatsApp", key=f"btn_action_{index}"):
+                        st.session_state.egresados_saludados.add(id_unico_egresado)
+                        st.session_state.registro_envios[dia_buscado] += 1
+                        
+                        # Inyección segura de JS para saltarse bloqueos pop-up
+                        components.html(f"""
+                            <script>
+                                window.open("{link_wa}", "_blank");
+                            </script>
+                        """, height=0)
+                        st.rerun()
 
             st.markdown('</div>', unsafe_allow_html=True)
             
