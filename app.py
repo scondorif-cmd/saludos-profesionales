@@ -28,59 +28,89 @@ def descargar_datos():
     return pd.read_excel(io.BytesIO(resp.content), header=None, skiprows=1)
 
 def generar_imagen_tarjeta(nombre, carrera, es_varon):
-    # Lienzo en alta definición (Aumentamos el tamaño para mayor nitidez)
-    ancho, alto = 1200, 850
+    # Dimensiones exactas para el diseño HD original
+    ancho, alto = 1200, 1050
     img = Image.new('RGB', (ancho, alto), color='#F8FAFC')
     draw = ImageDraw.Draw(img)
     
-    # Colores institucionales según género
-    color_cabecera = "#1B365D" if es_varon else "#6B21A8"
-    color_pie = "#0F172A" if es_varon else "#4C1D95"
+    # Paleta de colores exacta de tu diseño original
+    color_cabecera = "#1B365D"
+    color_pie = "#0B1D33"
     
-    # Dibujar bloques estéticos de fondo
-    draw.rectangle([0, 0, ancho, 210], fill=color_cabecera)
-    draw.rectangle([0, alto-110, ancho, alto], fill=color_pie)
+    # Dibujar franjas (Cabecera y Pie)
+    draw.rectangle([0, 0, ancho, 220], fill=color_cabecera)
+    draw.rectangle([0, alto-160, ancho, alto], fill=color_pie)
     
-    # MOTOR DE FUENTES INTEGRADO SEGURA (Grande y Proporcional)
+    # Carga de fuentes segura y compatible con Linux Streamlit (Grande y Elegante)
     try:
-        # Forzar el uso de la fuente vectorial del sistema Python (TrueType integrada)
-        font_titulo = ImageFont.truetype("VeraMoBi.ttf", 42)
-        font_sub = ImageFont.truetype("VeraMo.ttf", 24)
-        font_cuerpo = ImageFont.truetype("VeraMo.ttf", 28)
-        font_pie_bold = ImageFont.truetype("VeraMoBi.ttf", 22)
-        font_pie_reg = ImageFont.truetype("VeraMo.ttf", 18)
+        font_titulo = ImageFont.truetype("LiberationSans-Bold.ttf", 46)
+        font_sub = ImageFont.truetype("LiberationSans-Regular.ttf", 26)
+        font_cuerpo_bold = ImageFont.truetype("LiberationSans-Bold.ttf", 32)
+        font_cuerpo_reg = ImageFont.truetype("LiberationSans-Regular.ttf", 30)
+        font_pie_bold = ImageFont.truetype("LiberationSans-Bold.ttf", 24)
+        font_pie_reg = ImageFont.truetype("LiberationSans-Regular.ttf", 22)
     except:
-        try:
-            # Alternativa secundaria para servidores Linux de Streamlit
-            font_titulo = ImageFont.truetype("LiberationSans-Bold.ttf", 44)
-            font_sub = ImageFont.truetype("LiberationSans-Regular.ttf", 26)
-            font_cuerpo = ImageFont.truetype("LiberationSans-Regular.ttf", 30)
-            font_pie_bold = ImageFont.truetype("LiberationSans-Bold.ttf", 22)
-            font_pie_reg = ImageFont.truetype("LiberationSans-Regular.ttf", 18)
-        except:
-            # Respaldo absoluto por si las anteriores fallan
-            font_titulo = font_sub = font_cuerpo = font_pie_bold = font_pie_reg = ImageFont.load_default()
+        font_titulo = font_sub = font_cuerpo_bold = font_cuerpo_reg = font_pie_bold = font_pie_reg = ImageFont.load_default()
+
+    # --- TEXTOS DE LA CABECERA (Centrados perfectamente) ---
+    texto_titulo = f"¡Feliz Cumpleaños, {nombre}! 🎂🎉"
+    w_t = draw.textlength(texto_titulo, font=font_titulo)
+    draw.text(((ancho - w_t) / 2, 50), texto_titulo, fill="#FFFFFF", font=font_titulo)
     
-    # Textos principales (Cabecera)
-    draw.text((60, 50), f"¡Feliz Cumpleaños, {nombre}!", fill="#FFFFFF", font=font_titulo)
-    draw.text((60, 130), f"Egresado(a) de {carrera}", fill="#E2E8F0", font=font_sub)
+    texto_sub = f"Egresado(a) de la Carrera Profesional de {carrera.upper()}"
+    w_s = draw.textlength(texto_sub, font=font_sub)
+    draw.text(((ancho - w_s) / 2, 135), texto_sub, fill="#E2E8F0", font=font_sub)
     
-    # Cuerpo del mensaje con sangría y espaciado corregido de 18 puntos
-    cuerpo_texto = (
-        f"Estimado(a) egresado(a),\n\n"
-        f"Hoy es un día muy especial, y desde la Unidad de Seguimiento al\n"
-        f"Egresado y Bolsa de Trabajo queremos hacerte llegar nuestras más\n"
-        f"sinceras felicitaciones por tu cumpleaños.\n\n"
-        f"Nos sentimos muy orgullosos de tus pasos. Deseamos que pases un\n"
-        f"día extraordinario junto a tus seres queridos.\n\n"
-        f"¡Que disfrutes mucho de tu día!"
-    )
-    draw.text((60, 270), cuerpo_texto, fill="#2C3E50", font=font_cuerpo, spacing=18)
+    # --- TEXTO DEL CUERPO (Alineado a la izquierda con margen) ---
+    draw.text((70, 290), "Estimado(a) egresado(a),", fill="#1E293B", font=font_cuerpo_bold)
     
-    # Pie de página institucional bien posicionado abajo
-    draw.text((60, alto-85), "Unidad de Seguimiento al Egresado y Bolsa de Trabajo", fill="#FFFFFF", font=font_pie_bold)
-    draw.text((60, alto-50), "Universidad Nacional Amazónica de Madre de Dios", fill="#CBD5E1", font=font_pie_reg)
+    # Párrafo principal estructurado línea por línea
+    draw.text((70, 370), "Hoy es un día muy especial, y desde la ", fill="#334155", font=font_cuerpo_reg)
+    w_p1 = draw.textlength("Hoy es un día muy especial, y desde la ", font=font_cuerpo_reg)
+    draw.text((70 + w_p1, 370), "Unidad de", fill="#1E293B", font=font_cuerpo_bold)
     
+    draw.text((70, 420), "Seguimiento al Egresado y Bolsa de Trabajo", fill="#1E293B", font=font_cuerpo_bold)
+    w_p2 = draw.textlength("Seguimiento al Egresado y Bolsa de Trabajo ", font=font_cuerpo_bold)
+    draw.text((70 + w_p2, 420), "queremos", fill="#334155", font=font_cuerpo_reg)
+    
+    draw.text((70, 470), "hacerte llegar nuestras más sinceras felicitaciones por tu", fill="#334155", font=font_cuerpo_reg)
+    draw.text((70, 520), "cumpleaños.", fill="#334155", font=font_cuerpo_reg)
+    
+    draw.text((70, 610), "Nos sentimos muy orgullosos de tus pasos y de tenerte como miembro activo de", fill="#334155", font=font_cuerpo_reg)
+    draw.text((70, 660), "nuestra comunidad de graduados. Deseamos que pases un día extraordinario", fill="#334155", font=font_cuerpo_reg)
+    draw.text((70, 710), "junto a tus seres queridos y que este nuevo año esté lleno de salud, felicidad y", fill="#334155", font=font_cuerpo_reg)
+    draw.text((70, 760), "grandes éxitos profesionales.", fill="#334155", font=font_cuerpo_reg)
+    
+    # --- MENSAJE FINAL DESTACADO (Centrado) ---
+    texto_disfruta = "¡Que disfrutes mucho de tu día!"
+    w_d = draw.textlength(texto_disfruta, font=font_cuerpo_bold)
+    draw.text(((ancho - w_d) / 2, 840), texto_disfruta, fill="#1B365D", font=font_cuerpo_bold)
+    
+    # --- PIE DE PÁGINA (Centrado) ---
+    txt_atentamente = "ATENTAMENTE,"
+    w_a = draw.textlength(txt_atentamente, font=font_pie_bold)
+    draw.text(((ancho - w_a) / 2, alto - 130), txt_atentamente, fill="#38BDF8", font=font_pie_bold)
+    
+    txt_unidad = "Unidad de Seguimiento al Egresado y Bolsa de Trabajo - DAA"
+    w_u = draw.textlength(txt_unidad, font=font_pie_bold)
+    draw.text(((ancho - w_u) / 2, alto - 95), txt_unidad, fill="#FFFFFF", font=font_pie_bold)
+    
+    txt_uni = "Universidad Nacional Amazónica de Madre de Dios"
+    w_uni = draw.textlength(txt_uni, font=font_pie_reg)
+    draw.text(((ancho - w_uni) / 2, alto - 55), txt_uni, fill="#CBD5E1", font=font_pie_reg)
+    
+    # --- INTENTAR CARGAR LA MASCOTA DESDE REPOSITORIO EXTERNO ---
+    try:
+        # Usamos la imagen oficial de tu jaguar cargada de manera segura
+        url_mascota = "https://raw.githubusercontent.com/scondorif-cmd/saludos-profesionales/principal/mascota.png"
+        res_mascota = requests.get(url_mascota, timeout=5)
+        if res_mascota.status_code == 200:
+            img_mascota = Image.open(io.BytesIO(res_mascota.content)).convert("RGBA")
+            img_mascota = img_mascota.resize((260, 260))  # Tamaño proporcional original
+            img.paste(img_mascota, (870, 270), img_mascota) # Posición lateral derecha exacta
+    except:
+        pass # Si no existe o no conecta, la tarjeta se genera limpia sin romperse
+        
     img_ram = io.BytesIO()
     img.save(img_ram, format='PNG')
     return img_ram.getvalue()
