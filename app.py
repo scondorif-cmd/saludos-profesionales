@@ -4,7 +4,6 @@ import requests
 from datetime import datetime
 import urllib.parse
 import io
-import os
 from PIL import Image, ImageDraw, ImageFont
 
 # Configuración de la plataforma
@@ -28,47 +27,77 @@ def descargar_datos():
     resp = requests.get(url_descarga)
     return pd.read_excel(io.BytesIO(resp.content), header=None, skiprows=1)
 
-def conseguir_fuente_servidor(es_bold, tamano):
-    """Busca de manera exhaustiva fuentes TrueType escalables en Linux Streamlit"""
-    rutas_fuentes = [
-        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf" if es_bold else "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" if es_bold else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-        "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf" if es_bold else "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
-        "/usr/share/fonts/X11/TTF/luxisb.ttf" if es_bold else "/usr/share/fonts/X11/TTF/luxisr.ttf"
-    ]
-    
-    for ruta in rutas_fuentes:
-        if os.path.exists(ruta):
-            try:
-                return ImageFont.truetype(ruta, tamano)
-            except:
-                continue
-                
+def cargar_fuente_remota(url, tamano):
+    """Descarga fuentes de Google Fonts con soporte nativo de Tildes y Ñ en español"""
     try:
-        return ImageFont.truetype("DejaVuSans-Bold.ttf" if es_bold else "DejaVuSans.ttf", tamano)
+        respuesta = requests.get(url, timeout=10)
+        return ImageFont.truetype(io.BytesIO(respuesta.content), tamano)
     except:
-        try:
-            return ImageFont.load_default(size=tamano)
-        except:
-            return ImageFont.load_default()
+        return ImageFont.load_default()
+
+def dibujar_texto_justificado(draw, texto, x_inicio, y_inicio, ancho_maximo, font, color="#334155", interlineado=34):
+    """Función matemática para distribuir los espacios y lograr un justificado perfecto"""
+    palabras = texto.split()
+    if not palabras:
+        return y_inicio
+
+    linea_actual = []
+    y = y_inicio
+
+    for palabra in palabras:
+        test_linea = ' '.join(linea_actual + [palabra])
+        # Calcular ancho de la línea de prueba
+        bbox = draw.textbbox((0, 0), test_linea, font=font)
+        ancho_test = bbox[2] - bbox[0]
+        
+        if ancho_test <= ancho_maximo:
+            linea_actual.append(palabra)
+        else:
+            # Dibujar la línea actual justificada
+            if len(linea_actual) == 1:
+                draw.text((x_inicio, y), linea_actual[0], fill=color, font=font)
+            else:
+                bbox_sin_espacios = draw.textbbox((0, 0), ''.join(linea_actual), font=font)
+                ancho_letras = bbox_sin_espacios[2] - bbox_sin_espacios[0]
+                espacio_total_libre = ancho_maximo - ancho_letras
+                espacio_entre_palabras = espacio_total_libre / (len(linea_actual) - 1)
+                
+                x_cursor = x_inicio
+                for i, p in enumerate(linea_actual):
+                    draw.text((x_cursor, y), p, fill=color, font=font)
+                    bbox_p = draw.textbbox((0, 0), p, font=font)
+                    ancho_p = bbox_p[2] - bbox_p[0]
+                    x_cursor += ancho_p + espacio_entre_palabras
+            
+            linea_actual = [palabra]
+            y += interlineado
+
+    # Dibujar el último renglón suelto (alineado a la izquierda por regla gramatical)
+    if linea_actual:
+        draw.text((x_inicio, y), ' '.join(linea_actual), fill=color, font=font)
+        y += interlineado
+        
+    return y
 
 def crear_tarjeta_perfecta(nombre, carrera):
-    # Dimensiones exactas (750 x 850)
     ancho, alto = 750, 850
     imagen = Image.new("RGB", (ancho, alto), "#FFFFFF")
     draw = ImageDraw.Draw(imagen)
     
-    # === FUENTES DE ALTA RESOLUCIÓN ===
-    f_titulo = conseguir_fuente_servidor(True, 32)         # Nombre arriba
-    f_subtitulo = conseguir_fuente_servidor(False, 15)     # Carrera profesional
-    f_cuerpo_bold = conseguir_fuente_servidor(True, 23)    # "Estimado(a) egresado(a),"
-    f_cuerpo = conseguir_fuente_servidor(False, 19)       # Texto de felicitación
-    f_eslogan = conseguir_fuente_servidor(True, 26)        # ¡Que disfrutes mucho de tu día!
-    f_pie_tit = conseguir_fuente_servidor(True, 14)        # ATENTAMENTE,
-    f_pie_sub = conseguir_fuente_servidor(True, 16)        # Unidad de Seguimiento...
-    f_pie_univ = conseguir_fuente_servidor(False, 13)      # Universidad Nacional...
+    # URLs oficiales de Google Fonts (Noto Sans soporta perfectamente español: Ñ, Á, É, Í, Ó, Ú)
+    url_bold = "https://github.com/google/fonts/raw/main/ofl/notosans/NotoSans-Bold.ttf"
+    url_regular = "https://github.com/google/fonts/raw/main/ofl/notosans/NotoSans-Regular.ttf"
+    
+    f_titulo = cargar_fuente_remota(url_bold, 30)         # Nombre arriba
+    f_subtitulo = cargar_fuente_remota(url_regular, 14)   # Carrera profesional
+    f_cuerpo_bold = cargar_fuente_remota(url_bold, 22)    # "Estimado(a) egresado(a),"
+    f_cuerpo = cargar_fuente_remota(url_regular, 18)       # Texto de felicitación
+    f_eslogan = cargar_fuente_remota(url_bold, 25)        # ¡Que disfrutes mucho de tu día!
+    f_pie_tit = cargar_fuente_remota(url_bold, 13)        # ATENTAMENTE,
+    f_pie_sub = cargar_fuente_remota(url_bold, 15)        # Unidad de Seguimiento...
+    f_pie_univ = cargar_fuente_remota(url_regular, 13)    # Universidad Nacional...
 
-    # 1. Banner Superior Azul Institucional
+    # 1. Banner Superior Azul Institucional (Sin emojis para evitar cuadros vacíos)
     draw.rectangle([0, 0, ancho, 155], fill="#1B365D")
     draw.text((ancho // 2, 55), f"¡Feliz Cumpleaños, {nombre.upper()}!", fill="#FFFFFF", font=f_titulo, anchor="mm")
     
@@ -78,47 +107,35 @@ def crear_tarjeta_perfecta(nombre, carrera):
     else:
         draw.text((ancho // 2, 110), texto_carrera, fill="#E2E8F0", font=f_subtitulo, anchor="mm")
     
-    # 2. Cuerpo del Mensaje con Márgenes Controlados (Para no chocar con la Mascota)
-    draw.text((50, 205), "Estimado(a) egresado(a),", fill="#1E293B", font=f_cuerpo_bold)
+    # 2. Cuerpo del Mensaje con Justificación Perfecta (Muro invisible en el píxel 480)
+    draw.text((50, 195), "Estimado(a) egresado(a),", fill="#1E293B", font=f_cuerpo_bold)
     
-    # Renglones acortados estratégicamente para dejar libre la zona derecha (píxeles 520 a 750)
-    lineas = [
-        "Hoy es un día muy especial, y desde la",
-        "Unidad de Seguimiento al Egresado y",
-        "Bolsa de Trabajo queremos hacerte llegar",
-        "nuestras más sinceras felicitaciones por",
-        "tu cumpleaños.",
-        "",
-        "Nos sentimos muy orgullosos de tus pasos y",
-        "de tenerte como miembro activo de nuestra",
-        "comunidad de graduados. Deseamos que",
-        "pases un día extraordinario junto a tus seres",
-        "queridos y que este nuevo año esté lleno de",
-        "salud, felicidad y grandes éxitos profesionales."
-    ]
+    # Textos integrados con soporte de ortografía completo
+    parrafo_1 = "Hoy es un día muy especial, y desde la Unidad de Seguimiento al Egresado y Bolsa de Trabajo queremos hacerte llegar nuestras más sinceras felicitaciones por tu cumpleaños."
+    parrafo_2 = "Nos sentimos muy orgullosos de tus pasos y de tenerte como miembro activo de nuestra comunidad de graduados. Deseamos que pases un día extraordinario junto a tus seres queridos y que este nuevo año esté lleno de salud, felicidad y grandes éxitos profesionales."
     
-    y_linea = 255
-    for linea in lineas:
-        draw.text((50, y_linea), linea, fill="#334155", font=f_cuerpo)
-        y_linea += 34  # Ajuste fino de interlineado
+    # Justificar bloque 1
+    proxima_y = dibujar_texto_justificado(draw, parrafo_1, x_inicio=50, y_inicio=240, ancho_maximo=440, font=f_cuerpo, interlineado=32)
+    # Justificar bloque 2 (con un salto de línea estético)
+    dibujar_texto_justificado(draw, parrafo_2, x_inicio=50, y_inicio=proxima_y + 15, ancho_maximo=440, font=f_cuerpo, interlineado=32)
         
     # Mensaje de Cierre destacado abajo
-    draw.text((ancho // 2, 710), "¡Que disfrutes mucho de tu día!", fill="#1B365D", font=f_eslogan, anchor="mm")
+    draw.text((ancho // 2, 705), "¡Que disfrutes mucho de tu día!", fill="#1B365D", font=f_eslogan, anchor="mm")
     
-    # 3. Bloque Inferior del Pie de Página (Azul Oscuro)
+    # 3. Bloque Inferior del Pie de Página (Azul Oscuro con ortografía limpia)
     draw.rectangle([0, alto - 115, ancho, alto], fill="#0B1D33")
     draw.text((ancho // 2, alto - 85), "ATENTAMENTE,", fill="#38BDF8", font=f_pie_tit, anchor="mm")
     draw.text((ancho // 2, alto - 60), "Unidad de Seguimiento al Egresado y Bolsa de Trabajo - DAA", fill="#FFFFFF", font=f_pie_sub, anchor="mm")
     draw.text((ancho // 2, alto - 35), "Universidad Nacional Amazónica de Madre de Dios", fill="#94A3B8", font=f_pie_univ, anchor="mm")
     
-    # 4. Integración Limpia de la Mascota Jaguar (Alineada perfectamente a la derecha)
+    # 4. Integración Limpia de la Mascota Jaguar (En su espacio libre derecho)
     try:
         id_drive = "10fW68y7oiTcr-VcPoEW1V-OQ4O3psxup"
         url_mascota = f"https://docs.google.com/uc?export=download&id={id_drive}"
         res_img = requests.get(url_mascota, timeout=10)
         img_mascota = Image.open(io.BytesIO(res_img.content)).convert("RGBA")
-        img_mascota = img_mascota.resize((190, 220)) # Tamaño óptimo institucional
-        imagen.paste(img_mascota, (525, 230), img_mascota) # Posición segura
+        img_mascota = img_mascota.resize((210, 240)) 
+        imagen.paste(img_mascota, (510, 230), img_mascota) 
     except:
         pass
         
@@ -155,7 +172,7 @@ try:
             contador += 1
             nombre_egresado = nombre_completo.split(",")[1].strip() if "," in nombre_completo else nombre_completo
             
-            # Formateo de mensaje para WhatsApp
+            # Formateo de mensaje para WhatsApp (CON EMOJIS PERFECTOS PARA LA APP)
             texto_whatsapp = f"¡HOY CELEBRAMOS SU CUMPLEAÑOS! 🎂🎉\n\nEnviamos un afectuoso saludo a nuestro(a) profesional que festeja su onomástico hoy:\n\n*{nombre_egresado}*\n🎓 {carrera_profesional}\n\n¡Muchas felicidades y que tenga un excelente día! ✨🎈"
             texto_codificado = urllib.parse.quote(texto_whatsapp)
             
@@ -165,7 +182,6 @@ try:
                 
             link_wa = f"https://api.whatsapp.com/send?phone={num_limpio}&text={texto_codificado}"
             
-            # Generar tarjeta final usando el motor interno del servidor
             imagen_tarjeta = crear_tarjeta_perfecta(nombre_egresado, carrera_profesional)
             
             buf = io.BytesIO()
@@ -176,7 +192,6 @@ try:
             with col1:
                 st.image(imagen_tarjeta, use_container_width=True, caption=f"Tarjeta Oficial - {nombre_egresado}")
                 
-                # Botón de Descarga Estilizado en Azul Premium
                 st.download_button(
                     label="💾 Descargar Tarjeta PNG",
                     data=byte_im,
@@ -186,7 +201,6 @@ try:
                     use_container_width=True
                 )
                 
-                # Inyección estética CSS
                 st.markdown("""
                     <style>
                     div.stDownloadButton > button {
