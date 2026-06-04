@@ -27,40 +27,32 @@ def descargar_datos():
     resp = requests.get(url_descarga)
     return pd.read_excel(io.BytesIO(resp.content), header=None, skiprows=1)
 
-def cargar_fuente_remota(url, tamano):
-    """Descarga una fuente real TTF en memoria para evitar que el servidor distorsione los textos"""
-    try:
-        respuesta = requests.get(url, timeout=5)
-        return ImageFont.truetype(io.BytesIO(respuesta.content), tamano)
-    except:
-        return ImageFont.load_default()
-
 def crear_tarjeta_perfecta(nombre, carrera):
-    # Dimensiones exactas basadas en el diseño original (750 x 850)
+    # Dimensiones exactas de la tarjeta original (750 x 850)
     ancho, alto = 750, 850
     imagen = Image.new("RGB", (ancho, alto), "#FFFFFF")
     draw = ImageDraw.Draw(imagen)
     
-    # Servidor de fuentes de Google (Roboto/Arial equivalentes limpias)
-    url_bold = "https://github.com/google/fonts/raw/main/apache/roboto/static/Roboto-Bold.ttf"
-    url_regular = "https://github.com/google/fonts/raw/main/apache/roboto/static/Roboto-Regular.ttf"
-    
-    # Carga de tipografías con tamaños proporcionales para evitar el estiramiento
-    f_titulo = cargar_fuente_remota(url_bold, 28)
-    f_subtitulo = cargar_fuente_remota(url_regular, 15)
-    f_cuerpo_bold = cargar_fuente_remota(url_bold, 18)
-    f_cuerpo = cargar_fuente_remota(url_regular, 17)
-    f_eslogan = cargar_fuente_remota(url_bold, 22)
-    f_pie_tit = cargar_fuente_remota(url_bold, 13)
-    f_pie_sub = cargar_fuente_remota(url_bold, 15)
-    f_pie_univ = cargar_fuente_remota(url_regular, 13)
+    # Intentar usar la fuente preinstalada del sistema con un tamaño grande y legible
+    try:
+        f_titulo = ImageFont.truetype("DejaVuSans-Bold.ttf", 28)
+        f_subtitulo = ImageFont.truetype("DejaVuSans.ttf", 15)
+        f_cuerpo_bold = ImageFont.truetype("DejaVuSans-Bold.ttf", 18)
+        f_cuerpo = ImageFont.truetype("DejaVuSans.ttf", 17)
+        f_eslogan = ImageFont.truetype("DejaVuSans-Bold.ttf", 22)
+        f_pie_tit = ImageFont.truetype("DejaVuSans-Bold.ttf", 13)
+        f_pie_sub = ImageFont.truetype("DejaVuSans-Bold.ttf", 15)
+        f_pie_univ = ImageFont.truetype("DejaVuSans.ttf", 13)
+    except:
+        # Respaldo por defecto si el servidor no tiene fuentes externas (no distorsiona)
+        f_titulo = f_subtitulo = f_cuerpo_bold = f_cuerpo = f_eslogan = f_pie_tit = f_pie_sub = f_pie_univ = ImageFont.load_default()
 
     # 1. Encabezado Azul Institucional
     draw.rectangle([0, 0, ancho, 145], fill="#1B365D")
     draw.text((ancho // 2, 45), f"¡Feliz Cumpleaños, {nombre.upper()}! 🎂🎉", fill="#FFFFFF", font=f_titulo, anchor="mm")
     draw.text((ancho // 2, 95), f"Egresado(a) de la Carrera Profesional de {carrera.upper()}", fill="#E2E8F0", font=f_subtitulo, anchor="mm")
     
-    # 2. Bloque de Texto del Cuerpo (Fondo blanco, tipografía limpia y oscura)
+    # 2. Bloque de Texto del Cuerpo (Formateado línea por línea para evitar amontonamiento)
     draw.text((50, 195), "Estimado(a) egresado(a),", fill="#1E293B", font=f_cuerpo_bold)
     
     lineas = [
@@ -77,7 +69,7 @@ def crear_tarjeta_perfecta(nombre, carrera):
     y_linea = 245
     for linea in lineas:
         draw.text((50, y_linea), linea, fill="#334155", font=f_cuerpo)
-        y_linea += 32
+        y_linea += 34  # Espaciado perfecto entre líneas
         
     # Mensaje de Cierre destacado
     draw.text((ancho // 2, 590), "¡Que disfrutes mucho de tu día!", fill="#1B365D", font=f_eslogan, anchor="mm")
@@ -88,25 +80,16 @@ def crear_tarjeta_perfecta(nombre, carrera):
     draw.text((ancho // 2, alto - 80), "Unidad de Seguimiento al Egresado y Bolsa de Trabajo - DAA", fill="#FFFFFF", font=f_pie_sub, anchor="mm")
     draw.text((ancho // 2, alto - 50), "Universidad Nacional Amazónica de Madre de Dios", fill="#94A3B8", font=f_pie_univ, anchor="mm")
     
-    # 4. Descarga e Inserción de la Mascota desde tu Google Drive
+    # 4. Inserción de la Mascota desde Google Drive
     try:
         id_drive = "10fW68y7oiTcr-VcPoEW1V-OQ4O3psxup"
         url_mascota = f"https://docs.google.com/uc?export=download&id={id_drive}"
         res_img = requests.get(url_mascota, timeout=10)
         img_mascota = Image.open(io.BytesIO(res_img.content)).convert("RGBA")
         img_mascota = img_mascota.resize((150, 175))
-        # Superposición exacta en la zona superior derecha del cuerpo blanco
         imagen.paste(img_mascota, (540, 185), img_mascota)
-    except Exception as e:
-        # En caso de caída de Drive, usamos el respaldo de GitHub para que no falle la tarjeta
-        try:
-            url_respaldo = "https://raw.githubusercontent.com/scondorif-cmd/saludos-profesionales/principal/mascota.png"
-            res_img = requests.get(url_respaldo, timeout=5)
-            img_mascota = Image.open(io.BytesIO(res_img.content)).convert("RGBA")
-            img_mascota = img_mascota.resize((150, 175))
-            imagen.paste(img_mascota, (540, 185), img_mascota)
-        except:
-            pass
+    except:
+        pass
         
     return imagen
 
@@ -164,13 +147,14 @@ try:
             with col1:
                 st.image(imagen_tarjeta, use_container_width=True, caption=f"Tarjeta Lista - {nombre_egresado}")
                 
-                # --- BOTÓN DE DESCARGA DIRECTA OPERATIVO ---
+                # --- BOTÓN DE DESCARGA ESTILIZADO CON CSS MODERNO ---
                 st.download_button(
-                    label=f"📥 Descargar Tarjeta Oficial (.png)",
+                    label=f"💾 Descargar Tarjeta PNG",
                     data=byte_im,
                     file_name=f"Tarjeta_{nombre_egresado.replace(' ', '_')}.png",
                     mime="image/png",
-                    key=f"btn_dl_{index}"
+                    key=f"btn_dl_{index}",
+                    use_container_width=True
                 )
                 
             with col2:
