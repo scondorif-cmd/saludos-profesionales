@@ -299,7 +299,6 @@ try:
             texto_codificado = urllib.parse.quote(texto_whatsapp)
             
             num_limpio = b['celular']
-            # Validación estricta del número telefónico
             es_numero_valido = num_limpio and num_limpio != "nan" and len(num_limpio) == 9 and num_limpio.startswith("9")
             
             if es_numero_valido:
@@ -324,15 +323,16 @@ try:
                 if ya_saludado:
                     st.markdown(f'<a class="btn-deshabilitado">✅ Registrado en Columna AX para {b["nombre"]}</a>', unsafe_allow_html=True)
                 else:
+                    # IMPLEMENTACIÓN CRUCIAL: El botón de WhatsApp va FUERA del formulario
+                    if es_numero_valido:
+                        st.markdown(f'<a href="{link_wa}" target="_blank" class="btn-whatsapp-nativo">💬 Enviar por WhatsApp</a>', unsafe_allow_html=True)
+                    else:
+                        st.markdown(f'<a class="btn-deshabilitado">⚠️ Sin número de WhatsApp válido</a>', unsafe_allow_html=True)
+                    
+                    st.markdown("<div style='margin-top: 12px;'></div>", unsafe_allow_html=True)
+                    
+                    # El formulario ahora solo se encarga de guardar y confirmar el registro de manera aislada
                     with st.form(key=f"form_ax_{b['id_unico']}", border=False):
-                        # CAMBIO CLAVE: Si el número no es válido, se bloquea el botón de WhatsApp
-                        if es_numero_valido:
-                            st.markdown(f'<a href="{link_wa}" target="_blank" class="btn-whatsapp-nativo">💬 Enviar por WhatsApp</a>', unsafe_allow_html=True)
-                        else:
-                            st.markdown(f'<a class="btn-deshabilitado">⚠️ Sin número de WhatsApp válido</a>', unsafe_allow_html=True)
-                        
-                        st.markdown("<div style='margin-top: 6px;'></div>", unsafe_allow_html=True)
-                        
                         if st.form_submit_button("📌 Confirmar envío (Guardar en Columna AX)"):
                             guardar_log_permanente(b['id_unico'])
                             st.session_state.egresados_saludados.add(b['id_unico'])
