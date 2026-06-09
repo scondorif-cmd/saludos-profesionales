@@ -82,7 +82,7 @@ st.markdown("""
 st.markdown("<h1>🎓 Sistema de Cumpleaños UNAMAD</h1>", unsafe_allow_html=True)
 st.markdown("<p class='subtitulo-app'>Gestión institucional con almacenamiento permanente de registros.</p>", unsafe_allow_html=True)
 
-# ARCHIVO DE BASE DE DATOS LOCAL PARA PERSISTENCIA (No se borra al cerrar el celular)
+# ARCHIVO DE BASE DE DATOS LOCAL PARA PERSISTENCIA
 DB_LOG_FILE = "registro_envios_ax.csv"
 
 def cargar_log_permanente():
@@ -114,7 +114,6 @@ def descargar_datos():
     else:
         url_descarga = url_google_sheets
     resp = requests.get(url_descarga)
-    # Cargar Excel original sin alterar cabeceras
     return pd.read_excel(io.BytesIO(resp.content), header=None, skiprows=1)
 
 def obtener_jaguar_base64():
@@ -216,15 +215,12 @@ try:
     df = descargar_datos()
     jaguar_src = obtener_jaguar_base64()
     
-    # Asegurar que el DataFrame tenga suficientes columnas hasta la columna AX (Índice 50)
-    # Columna AQ = 42, Columna AR = 43 ... Columna AX = 50
     while df.shape[1] <= 50:
         df[df.shape[1]] = ""
         
     contador_cumpleanos_hoy = 0
     bloques_a_renderizar = []
 
-    # Primer recorrido para procesar datos y contar envíos reales del día
     for index, fila in df.iterrows():
         try:
             nombre_completo = str(fila[3]).strip()       
@@ -250,20 +246,16 @@ try:
             nombre_egresado = nombre_completo.split(",")[1].strip() if "," in nombre_completo else nombre_completo
             nombre_egresado = nombre_egresado.replace("da", "día").replace("Cumpleaos", "Cumpleaños")
             
-            # ID único que mapea directamente el registro
             id_unico_egresado = f"{nombre_egresado}_{dia_buscado}_{index}"
             
-            # Guardamos los datos para renderizar después
             bloques_a_renderizar.append({
                 'index': index, 'nombre': nombre_egresado, 'carrera': carrera_profesional,
                 'sexo': sexo_celda, 'celular': celular_celda, 'id_unico': id_unico_egresado
             })
             
-            # Si ya se encuentra registrado en el historial permanente, sumamos a las estadísticas
             if id_unico_egresado in st.session_state.egresados_saludados:
                 contador_cumpleanos_hoy += 1
 
-    # Renderizado del panel superior con los datos reales leídos
     st.markdown(f"""
         <div class="panel-metricas">
             <div style="display: flex; justify-content: space-around; text-align: center;">
@@ -307,10 +299,14 @@ try:
             texto_codificado = urllib.parse.quote(texto_whatsapp)
             
             num_limpio = b['celular']
-            if num_limpio and num_limpio != "nan" and len(num_limpio) == 9 and num_limpio.startswith("9"):
+            # Validación estricta del número telefónico
+            es_numero_valido = num_limpio and num_limpio != "nan" and len(num_limpio) == 9 and num_limpio.startswith("9")
+            
+            if es_numero_valido:
                 num_limpio = "51" + num_limpio
-                
-            link_wa = f"https://api.whatsapp.com/send?phone={num_limpio}&text={texto_codificado}"
+                link_wa = f"https://api.whatsapp.com/send?phone={num_limpio}&text={texto_codificado}"
+            else:
+                link_wa = "#"
             
             st.markdown('<div class="bloque-egresado">', unsafe_allow_html=True)
             col1, col2 = st.columns([1.2, 1.0], gap="small")
@@ -323,23 +319,23 @@ try:
                 st.markdown(f"<h3 style='margin-top:0; color:#1E293B;'>🥳 {b['nombre']}</h3>", unsafe_allow_html=True)
                 st.info(texto_whatsapp)
                 
-                # Comprobación de estado persistente
                 ya_saludado = b['id_unico'] in st.session_state.egresados_saludados
                 
                 if ya_saludado:
                     st.markdown(f'<a class="btn-deshabilitado">✅ Registrado en Columna AX para {b["nombre"]}</a>', unsafe_allow_html=True)
                 else:
                     with st.form(key=f"form_ax_{b['id_unico']}", border=False):
-                        st.markdown(f'<a href="{link_wa}" target="_blank" class="btn-whatsapp-nativo">💬 Enviar por WhatsApp</a>', unsafe_allow_html=True)
+                        # CAMBIO CLAVE: Si el número no es válido, se bloquea el botón de WhatsApp
+                        if es_numero_valido:
+                            st.markdown(f'<a href="{link_wa}" target="_blank" class="btn-whatsapp-nativo">💬 Enviar por WhatsApp</a>', unsafe_allow_html=True)
+                        else:
+                            st.markdown(f'<a class="btn-deshabilitado">⚠️ Sin número de WhatsApp válido</a>', unsafe_allow_html=True)
+                        
                         st.markdown("<div style='margin-top: 6px;'></div>", unsafe_allow_html=True)
                         
                         if st.form_submit_button("📌 Confirmar envío (Guardar en Columna AX)"):
-                            # Guardamos de forma permanente en el historial del aplicativo
                             guardar_log_permanente(b['id_unico'])
                             st.session_state.egresados_saludados.add(b['id_unico'])
-                            
-                            # Simulación visual en consola/backend indicando que la celda del DataFrame ha sido marcada
-                            # En un sistema conectado por API esto iría directo al Sheets original.
                             st.success(f"¡Éxito! Registro guardado en la columna AX (Fila {b['index'] + 2})")
                             st.rerun()
 
