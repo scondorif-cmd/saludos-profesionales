@@ -80,7 +80,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.markdown("<h1>🎓 Sistema de Cumpleaños UNAMAD</h1>", unsafe_allow_html=True)
-st.markdown("<p class='subtitulo-app'>Gestión institucional con almacenamiento permanente de registros.</p>", unsafe_allow_html=True)
+st.markdown("<p class='subtitulo-app'>Registros de cumpleaños de egresados.</p>", unsafe_allow_html=True)
 
 # ARCHIVO DE BASE DE DATOS LOCAL PARA PERSISTENCIA
 DB_LOG_FILE = "registro_envios_ax.csv"
@@ -295,7 +295,7 @@ try:
                 art_saludo = "nuestro(a) profesional"
                 colores_render = {'banner': 'linear-gradient(135deg, #1B365D 0%, #0B1D33 100%)', 'eslogan': '#1B365D', 'atentamente': '#38BDF8', 'pie_fondo': '#0B1D33'}
 
-            texto_whatsapp = f"¡HOY CELEBRAMOS SU CUMPLEAÑOS! 🎂🎉\n\nEnviamos un afectuoso saludo a {art_saludo} que festeja su onomástico hoy:\n\n*{b['nombre']}*\n🎓 {titulo_egresado} de {b['carrera']}\n\n¡Muchas felicidades y que tenga un excelente día! ✨🎈"
+            texto_whatsapp = f"¡HOY CELEBRAMOS TU CUMPLEAÑOS! 🎂🎉\n\nEnviamos un afectuoso saludo a {art_saludo} que festeja su onomástico hoy:\n\n*{b['nombre']}*\n🎓 {titulo_egresado} de {b['carrera']}\n\n¡Muchas felicidades y que tenga un excelente día! ✨🎈"
             texto_codificado = urllib.parse.quote(texto_whatsapp)
             
             num_limpio = b['celular']
