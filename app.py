@@ -329,37 +329,36 @@ with tab_cumple:
         st.error(f"Error en el flujo principal de cumpleaños: {e}")
 
 # ==========================================
-# PESTAÑA 2: BOLETÍN LABORAL SEMANAL (Grupo Único)
+# PESTAÑA 2: BOLETÍN SEMANAL CON DISEÑO GRÁFICO (Para Grupo Único)
 # ==========================================
 with tab_convocatoria:
-    st.markdown("### 📰 Creador de Boletín Laboral Semanal")
-    st.write("Agrega múltiples ofertas aquí para generar un único mensaje resumido y ordenado para tu grupo general.")
+    st.markdown("### 📰 Creador de Boletín Laboral Semanal con Diseño")
+    st.write("Agrega múltiples ofertas para generar el texto de WhatsApp y la tarjeta gráfica institucional para el grupo.")
 
-    # Inicializar la lista del boletín en la sesión activa si no existe
     if "lista_boletin" not in st.session_state:
         st.session_state.lista_boletin = []
 
-    # Formulario limpio para registrar vacantes en la cola semanal
+    # Formulario para registrar vacantes en la cola
     with st.form("form_agregar_boletin", clear_on_submit=True):
         st.markdown("##### ➕ Registrar Nueva Oferta al Boletín")
         col_b1, col_b2 = st.columns(2)
         with col_b1:
             b_carrera = st.selectbox("🎓 Especialidad o Carrera Destacada:", [
                 "INGENIERÍA DE SISTEMAS E INFORMATICA", 
-                "DERECHO Y CIENCIA POLÍTICA", 
-                "ADMINISTRACIÓN", 
+                "DERECHO Y CIENCIAS POLÍTICAS", 
+                "ADMINISTRACIÓN Y NEGOCIOS INTERNACIONALES", 
                 "CONTABILIDAD Y FINANZAS", 
-                "EDUCACIÓN", 
+                "EDUCACIÓN PRIMARIA E INFORMÁTICA", 
                 "ENFERMERÍA", 
                 "ECOTURISMO", 
                 "INGENIERÍA AGROINDUSTRIAL", 
                 "INGENIERÍA FORESTAL Y MEDIO AMBIENTE",
                 "MULTIDISCIPLINAR (TODAS LAS CARRERAS)"
             ])
-            b_puesto = st.text_input("💼 Puesto / Cargo Requerido:", placeholder="Ej. Analista de Créditos, Residente")
+            b_puesto = st.text_input("💼 Puesto / Cargo Requerido:", placeholder="Ej. Programador, Residente")
         with col_b2:
-            b_empresa = st.text_input("🏢 Empresa u Organización Oponente:", placeholder="Ej. Banco de la Nación, Municipalidad")
-            b_link = st.text_input("🔗 Link o Correo para Postular:", placeholder="Ej. https://forms.gle/... o cv@correo.com")
+            b_empresa = st.text_input("🏢 Empresa u Organización:", placeholder="Ej. Caja Tacna, Banco de la Nación")
+            b_link = st.text_input("🔗 Link o Correo para Postular:", placeholder="Ej. cv@cajatacna.com")
             
         if st.form_submit_button("✅ Añadir Oferta al Resumen"):
             if b_puesto and b_empresa:
@@ -367,47 +366,116 @@ with tab_convocatoria:
                     "carrera": b_carrera,
                     "puesto": b_puesto,
                     "empresa": b_empresa,
-                    "link": b_link if b_link else "Consultar directamente en la Unidad"
+                    "link": b_link if b_link else "Consultar en la Unidad"
                 })
-                st.toast(f"¡Agregado con éxito: {b_puesto}!")
+                st.toast(f"¡Agregado: {b_puesto}!")
                 st.rerun()
             else:
-                st.warning("⚠️ Asegúrate de rellenar al menos el puesto y el nombre de la empresa.")
+                st.warning("⚠️ Rellena al menos el puesto y la empresa.")
 
-    # Renderizado y compilación de la información acumulada
+    # Renderizado si hay elementos acumulados
     if st.session_state.lista_boletin:
         st.markdown("---")
-        col_prev, col_text = st.columns([1, 1.2], gap="medium")
         
-        with col_prev:
-            st.markdown("##### 📋 Ofertas acumuladas para el envío masivo:")
-            for idx, item in enumerate(st.session_state.lista_boletin):
-                st.markdown(f"**{idx+1}. [{item['carrera']}]** {item['puesto']} en *{item['empresa']}*")
+        # 1. CONSTRUCCIÓN DEL TEXTO PARA WHATSAPP
+        fecha_hoy = datetime.now().strftime("%d/%m/%Y")
+        mensaje_boletin = f"📢 *BOLETÍN SEMANAL DE CONVOCATORIAS LABORALES UNAMAD* 💼\n" \
+                          f"🗓️ _Actualizado al: {fecha_hoy}_\n\n" \
+                          f"Estimados egresados, les presentamos el resumen de vacantes disponibles para la semana ordenadas por carrera profesional. ¡Aprovechen estas oportunidades! 👇\n\n"
+        
+        # Construcción de las filas dentro del HTML del Flyer dinámico
+        html_items = ""
+        for item in st.session_state.lista_boletin:
+            mensaje_boletin += f"🎓 *[{item['carrera']}]*\n" \
+                               f"• 💼 *Puesto:* {item['puesto']}\n" \
+                               f"• 🏢 *Entidad:* {item['empresa']}\n" \
+                               f"• 🔗 *Postula aquí:* {item['link']}\n" \
+                               f"────────────────\n\n"
             
-            st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
-            if st.button("🗑️ Limpiar / Vaciar toda la cola del Boletín"):
+            html_items += f"""
+            <div class="item-boletin">
+                <div class="tag-carrera-item">🎓 {item['carrera']}</div>
+                <div class="puesto-item">💼 {item['puesto'].upper()}</div>
+                <div class="empresa-item">🏢 {item['empresa']}</div>
+                <div class="link-item">🔗 Postulación: {item['link']}</div>
+            </div>
+            """
+            
+        mensaje_boletin += "📌 _Mantén tu perfil activo. Recuerda reportar tus inserciones exitosas a la Unidad de Bolsa de Trabajo._"
+
+        # 2. CONSTRUCCIÓN DEL FLYER HTML INTEGRADO
+        flyer_boletin_html = f"""
+        <!DOCTYPE html>
+        <html><head><meta charset="UTF-8"><script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+        <style>
+            body {{ margin:0; padding:0; font-family: 'Segoe UI', Arial, sans-serif; background:#F8FAFC; }}
+            .contenedor-boletin-grafico {{ max-width: 480px; margin: 0 auto; border: 2px solid #1B365D; border-radius:16px; overflow:hidden; box-shadow:0 12px 28px rgba(0,0,0,0.15); background:#FFFFFF; }}
+            .header-boletin {{ background: linear-gradient(135deg, #1B365D 0%, #0B1D33 100%); color: white; padding: 26px 20px; text-align:center; position: relative; }}
+            .header-boletin h4 {{ margin:0; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:2px; color:#38BDF8; }}
+            .header-boletin h2 {{ margin:6px 0 0 0; font-size:22px; font-weight:800; letter-spacing:-0.5px; }}
+            .header-boletin .fecha-tag {{ display:inline-block; margin-top:8px; background: rgba(56, 189, 248, 0.2); padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; color: #38BDF8; }}
+            .body-boletin {{ padding: 20px; max-height: 550px; overflow-y: auto; background:#FFFFFF; }}
+            .item-boletin {{ background: #F8FAFC; border-left: 4px solid #F59E0B; border-top: 1px solid #E2E8F0; border-right: 1px solid #E2E8F0; border-bottom: 1px solid #E2E8F0; border-radius: 0 8px 8px 0; padding: 12px; margin-bottom: 14px; }}
+            .tag-carrera-item {{ font-size: 10px; font-weight: 800; color: #F59E0B; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }}
+            .puesto-item {{ font-size: 14.5px; font-weight: 700; color: #1E293B; }}
+            .empresa-item {{ font-size: 13px; font-weight: 600; color: #475569; margin-top: 2px; }}
+            .link-item {{ font-size: 11px; color: #2563EB; font-weight: 500; margin-top: 6px; word-break: break-all; }}
+            .pie-boletin {{ background:#0B1D33; padding:14px; text-align:center; color:#94A3B8; font-size:10px; font-weight:500; }}
+            .btn-copiar-boletin {{ display: block; width: 100%; max-width: 480px; margin: 12px auto 0 auto; background: #25D366; color: white; border: none; padding: 12px; font-weight: 700; font-size: 14px; border-radius: 10px; cursor: pointer; text-align: center; box-shadow: 0 4px 12px rgba(37,211,102,0.3); }}
+        </style></head><body>
+            <div id="capture-boletin" class="contenedor-boletin-grafico">
+                <div class="header-boletin">
+                    <h4>Bolsa de Trabajo UNAMAD</h4>
+                    <h2>RESUMEN DE VACANTES</h2>
+                    <div class="fecha-tag">SEMANA DEL {fecha_hoy}</div>
+                </div>
+                <div class="body-boletin">
+                    {html_items}
+                </div>
+                <div class="pie-boletin">
+                    Unidad de Seguimiento al Egresado y Bolsa de Trabajo - DAA<br>Universidad Nacional Amazónica de Madre de Dios
+                </div>
+            </div>
+            <button id="btn-snap-boletin" class="btn-copiar-boletin" onclick="capturarBoletin()">📋 Copiar Imagen del Boletín Semanal</button>
+            <script>
+                function capturarBoletin() {{
+                    const el = document.getElementById('capture-boletin');
+                    const btn = document.getElementById('btn-snap-boletin');
+                    html2canvas(el, {{ scale: 2, logging: false, useCORS: true }}).then(canvas => {{
+                        canvas.toBlob(blob => {{
+                            if(!blob) return;
+                            const item = new ClipboardItem({{ "image/png": blob }});
+                            navigator.clipboard.write([item]).then(() => {{
+                                btn.innerText = "✅ ¡Imagen del Boletín Copiada!";
+                                btn.style.background = "#22C55E";
+                                setTimeout(() => {{ btn.innerText = "📋 Copiar Imagen del Boletín Semanal"; btn.style.background = "#25D366"; }}, 3000);
+                            }});
+                        }}, 'image/png');
+                    }});
+                }}
+            </script>
+        </body></html>
+        """
+
+        # Interfaz de dos columnas para visualizar el texto y el diseño en tiempo real
+        col_text_side, col_flyer_side = st.columns([1, 1], gap="medium")
+        
+        with col_text_side:
+            st.markdown("##### 💬 1. Texto Limpio para WhatsApp")
+            st.text_area("Copia y pega este contenido en el chat general:", value=mensaje_boletin, height=280)
+            
+            st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
+            st.markdown("##### 📋 Listado actual en cola:")
+            for idx, item in enumerate(st.session_state.lista_boletin):
+                st.caption(f"📌 **{item['puesto']}** en *{item['empresa']}*")
+                
+            if st.button("🗑️ Vaciar / Reiniciar Todo"):
                 st.session_state.lista_boletin = []
                 st.rerun()
-                
-        with col_text:
-            st.markdown("##### 💬 Texto Estructurado Listo para Copiar")
-            st.write("Copia este bloque único y pégalo directamente en tu grupo único de WhatsApp:")
+
+        with col_flyer_side:
+            st.markdown("##### 🎨 2. Flyer Digital Generado Automáticamente")
+            components.html(flyer_boletin_html, height=670, scrolling=False)
             
-            # Construcción dinámica e inteligente del boletín
-            fecha_hoy = datetime.now().strftime("%d/%m/%Y")
-            mensaje_boletin = f"📢 *BOLETÍN SEMANAL DE CONVOCATORIAS LABORALES UNAMAD* 💼\n"
-            mensaje_boletin += f"🗓️ _Actualizado al: {fecha_hoy}_\n\n"
-            mensaje_boletin += f"Estimados egresados, les presentamos el resumen de vacantes disponibles para la semana ordenadas por carrera profesional. ¡Aprovechen estas oportunidades! 👇\n\n"
-            
-            for item in st.session_state.lista_boletin:
-                mensaje_boletin += f"🎓 *[{item['carrera']}]*\n"
-                mensaje_boletin += f"• 💼 *Puesto:* {item['puesto']}\n"
-                mensaje_boletin += f"• 🏢 *Entidad:* {item['empresa']}\n"
-                mensaje_boletin += f"• 🔗 *Postula aquí:* {item['link']}\n"
-                mensaje_boletin += f"────────────────\n\n"
-                
-            mensaje_boletin += "📌 _Mantén tu perfil activo. Recuerda reportar tus inserciones exitosas a la Unidad de Bolsa de Trabajo._"
-            
-            st.text_area("Copia el texto aquí abajo 👇:", value=mensaje_boletin, height=320)
     else:
-        st.info("💡 Aún no has agregado ofertas a la cola. Completa el formulario superior para empezar a armar el reporte de la semana.")
+        st.info("💡 La cola del boletín está vacía. Añade vacantes arriba para ver el diseño unificado.")
